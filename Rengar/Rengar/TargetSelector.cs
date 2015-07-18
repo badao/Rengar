@@ -104,7 +104,7 @@ namespace Rengar
         {
             get
             {
-                return (_configMenu != null && _configMenu.Item("FocusSelected").GetValue<bool>() && _selectedTargetObjAiHero.IsVisible
+                return (_configMenu != null && _configMenu.Item("FocusSelected").GetValue<bool>()
                     ? _selectedTargetObjAiHero
                     : null);
             }
