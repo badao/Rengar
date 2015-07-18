@@ -238,7 +238,7 @@ namespace Rengar
             }
             //if (spell.Name.ToLower().Contains("rengarw")) ;
             if (spell.Name.ToLower().Contains("rengare"))
-                if (Orbwalking.LastAATick < Utils.TickCount && Utils.TickCount < Orbwalking.LastAATick + Player.AttackCastDelay * 1000 + 40)
+                if (Orbwalking.LastAATick < Utils.GameTimeTickCount && Utils.GameTimeTickCount < Orbwalking.LastAATick + Player.AttackCastDelay * 1000 + 40)
                     Orbwalking.ResetAutoAttackTimer();
         }
         public static void Unit_OnDash(Obj_AI_Base sender, Dash.DashItem args)
@@ -597,7 +597,7 @@ namespace Rengar
         private static void ComboModeSwitch()
         {
             var comboMode = mode;
-            var lasttime = Environment.TickCount - _lastTick;
+            var lasttime = Utils.GameTimeTickCount - _lastTick;
             if (!Menu.Item("ComboSwitch").GetValue<KeyBind>().Active ||
                 lasttime <= Game.Ping)
             {
@@ -608,15 +608,15 @@ namespace Rengar
             {
                 case "Snare":
                     Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 1));
-                    _lastTick = Environment.TickCount + 300;
+                    _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Burst":
                     Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 2));
-                    _lastTick = Environment.TickCount + 300;
+                    _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Auto":
                     Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 0));
-                    _lastTick = Environment.TickCount + 300;
+                    _lastTick = Utils.GameTimeTickCount + 300;
                     break;
             }
         }
