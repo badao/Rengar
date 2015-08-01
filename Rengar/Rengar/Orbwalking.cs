@@ -12,6 +12,72 @@ using Color = System.Drawing.Color;
 
 namespace Rengar
 {
+    public static class DelayAction
+    {
+        public delegate void Callback();
+
+        public static List<Action> ActionList = new List<Action>();
+
+        static DelayAction()
+        {
+            Game.OnUpdate += GameOnOnGameUpdate;
+        }
+
+        private static void GameOnOnGameUpdate(EventArgs args)
+        {
+            for (var i = ActionList.Count - 1; i >= 0; i--)
+            {
+                if (ActionList[i].Time <= Utils.GameTimeTickCount)
+                {
+                    try
+                    {
+                        if (ActionList[i].CallbackObject != null)
+                        {
+                            ActionList[i].CallbackObject();
+                            //Will somehow result in calling ALL non-internal marked classes of the called assembly and causes NullReferenceExceptions.
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+
+                    ActionList.RemoveAt(i);
+                }
+            }
+        }
+
+        public static void Add(int time, Callback func, int ID)
+        {
+            var action = new Action(time, func, ID);
+            ActionList.Add(action);
+        }
+        public static void Remove(int ID)
+        {
+            for (var i = ActionList.Count - 1; i >= 0; i--)
+            {
+                if (ActionList[i].Identify == ID)
+                {
+                    ActionList.RemoveAt(i);
+                }
+            }
+        }
+
+        public struct Action
+        {
+            public Callback CallbackObject;
+            public int Time;
+            public int Identify;
+
+            public Action(int time, Callback callback, int ID)
+            {
+                Time = time + Utils.GameTimeTickCount;
+                CallbackObject = callback;
+                Identify = ID;
+            }
+        }
+
+    }
     public static class Orbwalking
     {
         public delegate void AfterAttackEvenH(AttackableUnit unit, AttackableUnit target);
@@ -424,8 +490,8 @@ namespace Rengar
 
                         if (unit.IsMelee())
                         {
-                            Utility.DelayAction.Add(
-                                (int)(unit.AttackCastDelay * 1000 + 40), () => FireAfterAttack(unit, _lastTarget));
+                            DelayAction.Add(
+                                (int)(unit.AttackCastDelay * 1000 + 40), () => FireAfterAttack(unit, _lastTarget),1);
                         }
                     }
                 }
