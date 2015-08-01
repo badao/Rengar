@@ -137,13 +137,13 @@ namespace Rengar
         {
             if (Player.IsDead)
                 return;
-            if (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp"))
-            {
-                if (Orbwalking.CanMove(extrawindup + 100))
-                {
-                    Orbwalking.ResetAutoAttackTimer();
-                }
-            }
+            //if (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp"))
+            //{
+            //    if (Orbwalking.CanMove(extrawindup + 100))
+            //    {
+            //        Orbwalking.ResetAutoAttackTimer();
+            //    }
+            //}
             DrawSelectedTarget();
             ComboModeSwitch();
             //checkbuff();
@@ -238,8 +238,11 @@ namespace Rengar
             }
             //if (spell.Name.ToLower().Contains("rengarw")) ;
             if (spell.Name.ToLower().Contains("rengare"))
-                if (Orbwalking.LastAATick < Utils.GameTimeTickCount && Utils.GameTimeTickCount < Orbwalking.LastAATick + Player.AttackCastDelay * 1000 + 40)
+                if (Orbwalking.LastAATick < Utils.GameTimeTickCount - Game.Ping / 2 && Utils.GameTimeTickCount - Game.Ping / 2 < Orbwalking.LastAATick + Player.AttackCastDelay * 1000 + 40)
+                {
+                    DelayAction.Remove(1);
                     Orbwalking.ResetAutoAttackTimer();
+                }
         }
         public static void Unit_OnDash(Obj_AI_Base sender, Dash.DashItem args)
         {
@@ -535,6 +538,16 @@ namespace Rengar
                             }
                         }
                     }
+                }
+            }
+            if (Player.HasBuffOfType(BuffType.Stun) || Player.HasBuffOfType(BuffType.Taunt) || Player.HasBuffOfType(BuffType.Suppression)
+                || Player.HasBuffOfType(BuffType.Knockup) || Player.HasBuffOfType(BuffType.Knockback) || Player.HasBuffOfType(BuffType.Fear))
+            {
+                if (Orbwalking.LastAATick + Game.Ping / 2 <= Utils.GameTimeTickCount && Orbwalking.LastAATick != 0
+                    && Utils.GameTimeTickCount <= Orbwalking.LastAATick + Game.Ping + 40 + Player.AttackCastDelay * 1000)
+                {
+                    DelayAction.Remove(1);
+                    Orbwalking.ResetAutoAttackTimer();
                 }
             }
         }
