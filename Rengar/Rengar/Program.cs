@@ -58,8 +58,8 @@ namespace Rengar
             spellMenu.AddItem(new MenuItem("ComboSwitch", "Combo Mode Switch").SetValue(new KeyBind("T".ToCharArray()[0],KeyBindType.Press)));
             spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto","Always Q"},0)));
             spellMenu.AddItem(new MenuItem("useSmite", "Use Smite Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmuu while Steathed").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Youmumu", "Youmuu while Steathed Mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
+            spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmuu while Stealthed").SetValue(true));
+            spellMenu.AddItem(new MenuItem("Youmumu", "Youmuu while Stealthed Mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
             //spellMenu.AddItem(new MenuItem("DontWaitReset","Dont Wait Reset AA with Q").SetValue(true));
             var clear = spellMenu.AddSubMenu(new Menu("Clear","Clear"));
             clear.AddItem(new MenuItem("useQ", "use Q").SetValue(true));
