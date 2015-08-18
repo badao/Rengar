@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -98,7 +98,16 @@ namespace Rengar
             Combo,
             None
         }
-
+        public static readonly BuffType[] DisableBuff =
+        {
+            BuffType.Charm,
+            BuffType.Fear,
+            BuffType.Stun,
+            BuffType.Knockup,
+            BuffType.Knockup,
+            BuffType.Taunt,
+            BuffType.Suppression
+        };
         //Spells that reset the attack timer.
         private static readonly string[] AttackResets =
         {
@@ -140,6 +149,9 @@ namespace Rengar
         private static int _delay;
         private static float _minDistance = 400;
         private static readonly Random _random = new Random(DateTime.Now.Millisecond);
+        public static AttackableUnit DashTarget;
+        public static int dashcount, dashtime;
+        public static bool dashwait;
 
         static Orbwalking()
         {
@@ -155,8 +167,10 @@ namespace Rengar
             if (!sender.IsMe)
                 return;
             LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 + args.Duration;
-            Utility.DelayAction.Add(
-                                (int)(/*Player.AttackCastDelay * 1000 + */args.Duration + 40), () => FireAfterAttack(Player, _lastTarget));
+            DashTarget = _lastTarget;
+            dashcount = Utils.GameTimeTickCount;
+            dashwait = true;
+            dashtime = args.Duration;
         }
 
         private static void Obj_SpellMissile_OnCreate(GameObject sender, EventArgs args)
@@ -309,7 +323,8 @@ namespace Rengar
         {
             if (LastAATick <= Utils.GameTimeTickCount)
             {
-                return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack;
+                return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack
+                                    && !DisableBuff.Where(x => Player.HasBuffOfType(x)).Any() && !Player.IsDashing();
             }
 
             return false;
@@ -353,8 +368,8 @@ namespace Rengar
         private static void MoveTo(Vector3 position,
             float holdAreaRadius = 0,
             bool overrideTimer = false,
-            bool useFixedDistance = true,
-            bool randomizeMinDistance = true)
+            bool useFixedDistance = false,
+            bool randomizeMinDistance = false)
         {
             if (Utils.GameTimeTickCount - LastMoveCommandT < _delay && !overrideTimer)
             {
@@ -407,11 +422,16 @@ namespace Rengar
             Vector3 position,
             float extraWindup = 90,
             float holdAreaRadius = 0,
-            bool useFixedDistance = true,
-            bool randomizeMinDistance = true)
+            bool useFixedDistance = false,
+            bool randomizeMinDistance = false)
         {
             try
             {
+                if (CanMove(extraWindup))
+                {
+                    MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
+                }
+
                 if (target.IsValidTarget() && CanAttack() && InAutoAttackRange(target))
                 {
                     DisableNextAttack = false;
@@ -420,20 +440,10 @@ namespace Rengar
                     if (!DisableNextAttack)
                     {
                         Player.IssueOrder(GameObjectOrder.AttackUnit, target);
-
-                        if (_lastTarget != null && _lastTarget.IsValid && _lastTarget != target)
-                        {
-                            LastAATick = Utils.GameTimeTickCount + Game.Ping / 2;
-                        }
-
+                        LastAATick = Utils.GameTimeTickCount + Game.Ping / 2;
                         _lastTarget = target;
                         return;
                     }
-                }
-
-                if (CanMove(extraWindup))
-                {
-                    MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
                 }
             }
             catch (Exception e)
@@ -817,6 +827,23 @@ namespace Rengar
 
             private void GameOnOnGameUpdate(EventArgs args)
             {
+                if (dashwait == true)
+                {
+                    if (DashTarget == null)
+                        dashwait = false;
+                    else
+                    {
+                        if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
+                        {
+                            FireAfterAttack(Player, DashTarget);
+                            dashwait = false;
+                        }
+                        if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
+                        {
+                            dashwait = false;
+                        }
+                    }
+                }
                 try
                 {
                     if (ActiveMode == OrbwalkingMode.None)
@@ -834,7 +861,7 @@ namespace Rengar
                     Orbwalk(
                         target, (_orbwalkingPoint.To2D().IsValid()) ? _orbwalkingPoint : Game.CursorPos,
                         _config.Item("ExtraWindup").GetValue<Slider>().Value,
-                        _config.Item("HoldPosRadius").GetValue<Slider>().Value);
+                        _config.Item("HoldPosRadius").GetValue<Slider>().Value,false,false);
                 }
                 catch (Exception e)
                 {

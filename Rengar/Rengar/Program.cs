@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -48,31 +48,31 @@ namespace Rengar
 
 
             Menu = new Menu(Player.ChampionName, Player.ChampionName, true);
-            Menu orbwalkerMenu = new Menu("Orbwalker", "Orbwalker");
+            var orbwalkerMenu = new Menu("Orbwalker", "Orbwalker");
             Orbwalker = new Rengar.Orbwalking.Orbwalker(orbwalkerMenu);
             Menu.AddSubMenu(orbwalkerMenu);
-            Menu ts = Menu.AddSubMenu(new Menu("Target Selector", "Target Selector")); ;
+            var ts = Menu.AddSubMenu(new Menu("Target Selector", "Target Selector")); ;
             TargetSelector.AddToMenu(ts);
 
-            Menu spellMenu = Menu.AddSubMenu(new Menu("Spells", "Spells"));
+            var spellMenu = Menu.AddSubMenu(new Menu("Spells", "Spells"));
             spellMenu.AddItem(new MenuItem("ComboSwitch", "ComboModeSwitch").SetValue(new KeyBind("T".ToCharArray()[0],KeyBindType.Press)));
-            spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto"},0)));
+            spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto","Always Q"},0)));
             spellMenu.AddItem(new MenuItem("useSmite", "Use Smite Combo").SetValue(true));
             spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmumu while Steath").SetValue(true));
             spellMenu.AddItem(new MenuItem("Youmumu", "Youmumu while steath mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
-            spellMenu.AddItem(new MenuItem("DontWaitReset","Dont Wait Reset AA with Q").SetValue(true));
-            Menu Clear = spellMenu.AddSubMenu(new Menu("Clear","Clear"));
-            Clear.AddItem(new MenuItem("useQ", "use Q").SetValue(true));
-            Clear.AddItem(new MenuItem("useE", "use E").SetValue(true));
-            Clear.AddItem(new MenuItem("useW", "use W").SetValue(true));
-            Clear.AddItem(new MenuItem("Save", "Save 5  FEROCITY").SetValue(false));
-            Menu auto = Menu.AddSubMenu(new Menu("Misc", "Misc"));
+            //spellMenu.AddItem(new MenuItem("DontWaitReset","Dont Wait Reset AA with Q").SetValue(true));
+            var clear = spellMenu.AddSubMenu(new Menu("Clear","Clear"));
+            clear.AddItem(new MenuItem("useQ", "use Q").SetValue(true));
+            clear.AddItem(new MenuItem("useE", "use E").SetValue(true));
+            clear.AddItem(new MenuItem("useW", "use W").SetValue(true));
+            clear.AddItem(new MenuItem("Save", "Save 5  FEROCITY").SetValue(false));
+            var auto = Menu.AddSubMenu(new Menu("Misc", "Misc"));
             auto.AddItem(new MenuItem("AutoHeal","Auto W if HP <").SetValue(new Slider(20,0,100)));
             auto.AddItem(new MenuItem("AutoSmite", "Auto Smite Heal if HP <").SetValue(new Slider(20, 0, 100)));
             auto.AddItem(new MenuItem("Interrupt", "Interrupt with E").SetValue(true));
             auto.AddItem(new MenuItem("SmiteKS", "Smite KillSteal").SetValue(true));
             auto.AddItem(new MenuItem("SmiteSteal", "Smite Steal Baron Dragon").SetValue(true));
-            Menu Drawing = Menu.AddSubMenu(new Menu("Drawing", "Drawing"));
+            var Drawing = Menu.AddSubMenu(new Menu("Drawing", "Drawing"));
             Drawing.AddItem(new MenuItem("DrawMode", "Draw Combo Mode").SetValue(true));
             Drawing.AddItem(new MenuItem("Notify", "Notify Selected Target").SetValue(true));
             Menu.AddToMainMenu();
@@ -86,7 +86,21 @@ namespace Rengar
             CustomEvents.Unit.OnDash += Unit_OnDash;
             Interrupter2.OnInterruptableTarget += Interrupter2_OnInterruptableTarget;
             LeagueSharp.Drawing.OnDraw += Drawing_OnDraw;
-            LeagueSharp.Obj_AI_Base.OnBuffRemove += Obj_AI_Base_OnBuffRemove;
+            Obj_AI_Base.OnBuffRemove += Obj_AI_Base_OnBuffRemove;
+            Orbwalking.BeforeAttack += Orbwalking_BeforeAttack;
+        }
+
+        private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args)
+        {
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && !Player.HasBuff("rengarpassivebuff") && Q.IsReady() && !(mode == "Snare" && Player.Mana == 5))
+            {
+                var x = Prediction.GetPrediction(args.Target as Obj_AI_Base,Player.AttackCastDelay + 0.04f);
+                if (Player.Distance(x.UnitPosition) <= Player.BoundingRadius + Player.AttackRange + args.Target.BoundingRadius)
+                {
+                    args.Process = false;
+                    Q.Cast();
+                }
+            }
         }
 
         private static void Obj_AI_Base_OnBuffRemove(Obj_AI_Base sender, Obj_AI_BaseBuffRemoveEventArgs args)
@@ -120,7 +134,7 @@ namespace Rengar
             }
         }
         private static bool notify { get { return Menu.Item("Notify").GetValue<bool>(); } }
-        private static bool dontwaitQ { get { return Menu.Item("DontWaitReset").GetValue<bool>(); } }
+        //private static bool dontwaitQ { get { return Menu.Item("DontWaitReset").GetValue<bool>(); } }
         private static int autoSmiteHeal { get { return Menu.Item("AutoSmite").GetValue<Slider>().Value; } }
         private static bool useSmiteSteal { get { return Menu.Item("SmiteSteal").GetValue<bool>(); } }
         private static bool useSmiteKS { get { return Menu.Item("SmiteKS").GetValue<bool>(); } }
@@ -253,7 +267,7 @@ namespace Rengar
                 if (args.Duration - 100 - Game.Ping / 2 > 0)
                 {
                     Utility.DelayAction.Add(
-                                   (int)(/*Player.AttackCastDelay * 1000 + */args.Duration - 100 - Game.Ping / 2), () => CastItem());
+                                   (int)(/*Player.AttackCastDelay * 1000 + */args.Duration - 100 - Game.Ping / 2), CastItem);
                 }
                 else
                 {
@@ -308,7 +322,7 @@ namespace Rengar
                         }
                         if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
                         {
-                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() && dontwaitQ)
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() /*&& dontwaitQ*/)
                             {
                                 Q.Cast();
                             }
@@ -352,7 +366,7 @@ namespace Rengar
                         }
                         if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
                         {
-                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() && dontwaitQ)
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() /*&& dontwaitQ*/)
                             {
                                 Q.Cast();
                             }
@@ -411,7 +425,7 @@ namespace Rengar
                         }
                         if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
                         {
-                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() && dontwaitQ)
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() /*&& dontwaitQ*/)
                             {
                                 Q.Cast();
                             }
@@ -439,6 +453,51 @@ namespace Rengar
                                 if (E.IsReady())
                                     E.Cast(target);
                             }
+                        }
+                    }
+                }
+                else if (mode == "Always Q") 
+                {
+                    if (Player.Mana < 5)
+                    {
+                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
+                        if (W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
+                        {
+                            W.Cast(targetW);
+                        }
+                        if (Orbwalking.CanMove(extrawindup))
+                        {
+                            var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+                            if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                            {
+                                E.Cast(targetE);
+                            }
+                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
+                            {
+                                if (E.IsReady())
+                                    E.Cast(target);
+                            }
+                        }
+                        if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
+                        {
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() /*&& dontwaitQ*/)
+                            {
+                                Q.Cast();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
+                        {
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack())
+                            {
+                                Q.Cast();
+                            }
+                        }
+                        if (Q.IsReady() && Player.IsDashing())
+                        {
+                            Q.Cast();
                         }
                     }
                 }
@@ -572,12 +631,9 @@ namespace Rengar
         }
         public static void checkbuff()
         {
-            String temp = "";
-            foreach (var buff in Player.Buffs)
-            {
-                temp += (buff.Name + "(" + buff.Count + ")" + ", ");
-            }
-            Game.Say(temp);
+            var temp = Player.Buffs.Aggregate("", (current, buff) => current + (buff.Name + "(" + buff.Count + ")" + ", "));
+            if (temp != null)
+                Game.Say(temp);
         }
 
         #region Smite
@@ -620,15 +676,19 @@ namespace Rengar
             switch (comboMode)
             {
                 case "Snare":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 1));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 1));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Burst":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 2));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 2));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Auto":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto" }, 0));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 3));
+                    _lastTick = Utils.GameTimeTickCount + 300;
+                    break;
+                case "Always Q":
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 0));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
             }
