@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,8 +42,14 @@ namespace Rengar
             E.MinHitChance = HitChance.Medium;
             W.SetSkillshot(0.25f, 500, 2000, false, SkillshotType.SkillshotCircle);
             W.MinHitChance = HitChance.Medium;
-            summoner1 = new Spell(SpellSlot.Summoner1);
-            summoner2 = new Spell(SpellSlot.Summoner2);
+            foreach (var spell in
+                        Player.Spellbook.Spells.Where(
+                          i =>
+                                i.Name.ToLower().Contains("smite") &&
+            (i.Slot == SpellSlot.Summoner1 || i.Slot == SpellSlot.Summoner2)))
+            {
+                SmiteSlot = spell.Slot;
+            }
             //Q.SetSkillshot(300, 50, 2000, false, SkillshotType.SkillshotLine);
 
 
@@ -151,12 +157,9 @@ namespace Rengar
         {
             if (Player.IsDead)
                 return;
-            //if (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp"))
+            //if (hasSmite)
             //{
-            //    if (Orbwalking.CanMove(extrawindup + 100))
-            //    {
-            //        Orbwalking.ResetAutoAttackTimer();
-            //    }
+            //    Game.PrintChat(hasSmiteBlue .ToString());
             //}
             DrawSelectedTarget();
             ComboModeSwitch();
@@ -244,6 +247,7 @@ namespace Rengar
             var spell = args.SData;
             if (!sender.IsMe)
                 return;
+            //Game.PrintChat(spell.Name);
             //Game.Say(spell.Name);
             if (spell.Name.ToLower().Contains("rengarq"))
             {
@@ -287,7 +291,7 @@ namespace Rengar
                     var target = TargetSelector.GetTarget(650, TargetSelector.DamageType.Physical);
                     if (target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= Player.BoundingRadius + 500 + target.BoundingRadius)
                     {
-                        SmiteSlot.Cast(target);
+                        Player.Spellbook.CastSpell(SmiteSlot, target);
                     }
                 }
             }
@@ -557,11 +561,11 @@ namespace Rengar
             {
                 if (SmiteSlot.IsReady())
                 {
-                    var creep = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral).Where(x => x.Name == "SRU_Dragon" || x.Name == "SRU_Baron");
+                    var creep = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral).Where(x => x.CharData.BaseSkinName == "SRU_Dragon" || x.CharData.BaseSkinName == "SRU_Baron");
                     foreach (var x in creep.Where(y => Player.Distance(y.Position) <= Player.BoundingRadius + 500 + y.BoundingRadius))
                     {
                         if (x != null && x.Health <= SmiteDamage)
-                            SmiteSlot.Cast(x);
+                            Player.Spellbook.CastSpell(SmiteSlot, x);
                     }
                 }
             }
@@ -575,9 +579,9 @@ namespace Rengar
                         foreach (var x in hero.Where(y => Player.Distance(y.Position) <= Player.BoundingRadius + 500 + y.BoundingRadius))
                         {
                             if (hasSmiteBlue && x != null && x.Health <= SmiteBlueDamage)
-                                SmiteSlot.Cast(x);
+                                Player.Spellbook.CastSpell(SmiteSlot, x);
                             if (hasSmiteRed && x != null && x.Health <= SmiteRedDamage)
-                                SmiteSlot.Cast(x);
+                                Player.Spellbook.CastSpell(SmiteSlot, x);
                         }
                     }
                 }
@@ -593,7 +597,7 @@ namespace Rengar
                             foreach (var x in creep.Where(y => Player.Distance(y.Position) <= Player.BoundingRadius + 500 + y.BoundingRadius))
                             {
                                 if (x != null && x.Health <= SmiteDamage)
-                                    SmiteSlot.Cast(x);
+                                    Player.Spellbook.CastSpell(SmiteSlot, x);
                             }
                         }
                     }
@@ -637,28 +641,45 @@ namespace Rengar
         }
 
         #region Smite
-        private static bool hasSmite { get { return SmiteName.Any(x => x == summoner1.Instance.Name || x == summoner2.Instance.Name); } }
-        private static List<string> SmiteName = new List<string> { "s5_summonersmiteplayerganker", "itemsmiteaoe", "s5_summonersmitequick", "s5_summonersmiteduel", "summonersmite" };
+        private static bool hasSmite { get { return SmiteSlot != SpellSlot.Unknown; } }
         private static List <int> listsmitedamge = new List<int> {390, 410, 430, 450, 480, 510, 540, 570, 600, 640, 680, 720, 760, 800, 850, 900, 950, 1000};
-        private static Spell SmiteSlot 
-        { 
+        private static SpellSlot SmiteSlot;
+        private static bool hasSmiteRed
+        {
             get
             {
-                if (SmiteName.Any(x => x == summoner1.Instance.Name))
-                {
-                    return summoner1;
-                }
-                else if (SmiteName.Any(x => x == summoner2.Instance.Name))
-                {
-                    return summoner2;
-                }
-                else return null;
+                return Items.HasItem(ItemData.Skirmishers_Sabre.Id, Player) || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Devourer.Id, Player)
+                    || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Warrior.Id, Player)
+                    || Items.HasItem(ItemData.Bamis_Cinder_Skirmishers_Sabre_Enchantment_Cinderhulk.Id, Player);
             }
         }
-        private static bool hasSmiteRed { get { return "s5_summonersmiteduel" == summoner1.Instance.Name || "s5_summonersmiteduel" == summoner2.Instance.Name; } }
-        private static bool hasSmiteBlue { get { return "s5_summonersmiteplayerganker" == summoner1.Instance.Name || "s5_summonersmiteplayerganker" == summoner2.Instance.Name; } }
-        private static bool hasSmitePink { get { return "itemsmiteaoe" == summoner1.Instance.Name || "itemsmiteaoe" == summoner2.Instance.Name; } }
-        private static bool hasSmiteGrey { get { return "s5_summonersmitequick" == summoner1.Instance.Name || "s5_summonersmitequick" == summoner2.Instance.Name; } }
+        private static bool hasSmiteBlue
+        {
+            get
+            {
+                return Items.HasItem(ItemData.Stalkers_Blade.Id, Player) || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Devourer.Id, Player)
+                    || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Warrior.Id, Player)
+                    || Items.HasItem(ItemData.Bamis_Cinder_Stalkers_Blade_Enchantment_Cinderhulk.Id, Player);
+            }
+        }
+        private static bool hasSmitePink
+        {
+            get
+            {
+                return Items.HasItem(ItemData.Rangers_Trailblazer.Id, Player) || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Devourer.Id, Player)
+                    || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Warrior.Id, Player)
+                    || Items.HasItem(ItemData.Bamis_Cinder_Rangers_Trailblazer_Enchantment_Cinderhulk.Id, Player);
+            }
+        }
+        private static bool hasSmiteGrey
+        {
+            get
+            {
+                return Items.HasItem(ItemData.Poachers_Knife.Id, Player) || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Devourer.Id, Player)
+                    || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Warrior.Id, Player)
+                    || Items.HasItem(ItemData.Bamis_Cinder_Poachers_Knife_Enchantment_Cinderhulk.Id, Player);
+            }
+        }
         private static int SmiteRedDamage { get { return 54 + 6*Player.Level; } }
         private static int SmiteBlueDamage { get { return 20 + 8 * Player.Level; } }
         private static int SmiteDamage { get { return listsmitedamge[Player.Level-1]; } }
