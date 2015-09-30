@@ -61,22 +61,22 @@ namespace Rengar
             TargetSelector.AddToMenu(ts);
 
             var spellMenu = Menu.AddSubMenu(new Menu("Spells", "Spells"));
-            spellMenu.AddItem(new MenuItem("ComboSwitch", "ComboModeSwitch").SetValue(new KeyBind("T".ToCharArray()[0],KeyBindType.Press)));
+            spellMenu.AddItem(new MenuItem("ComboSwitch", "Combo Mode Switch").SetValue(new KeyBind("T".ToCharArray()[0],KeyBindType.Press)));
             spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto","Always Q"},0)));
             spellMenu.AddItem(new MenuItem("useSmite", "Use Smite Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmumu while Steath").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Youmumu", "Youmumu while steath mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
+            spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmuu while Stealthed").SetValue(true));
+            spellMenu.AddItem(new MenuItem("Youmumu", "Youmuu while Stealthed Mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
             //spellMenu.AddItem(new MenuItem("DontWaitReset","Dont Wait Reset AA with Q").SetValue(true));
             var clear = spellMenu.AddSubMenu(new Menu("Clear","Clear"));
             clear.AddItem(new MenuItem("useQ", "use Q").SetValue(true));
             clear.AddItem(new MenuItem("useE", "use E").SetValue(true));
             clear.AddItem(new MenuItem("useW", "use W").SetValue(true));
-            clear.AddItem(new MenuItem("Save", "Save 5  FEROCITY").SetValue(false));
+            clear.AddItem(new MenuItem("Save", "Save 5 Ferocity").SetValue(false));
             var auto = Menu.AddSubMenu(new Menu("Misc", "Misc"));
             auto.AddItem(new MenuItem("AutoHeal","Auto W if HP <").SetValue(new Slider(20,0,100)));
             auto.AddItem(new MenuItem("AutoSmite", "Auto Smite Heal if HP <").SetValue(new Slider(20, 0, 100)));
             auto.AddItem(new MenuItem("Interrupt", "Interrupt with E").SetValue(true));
-            auto.AddItem(new MenuItem("SmiteKS", "Smite KillSteal").SetValue(true));
+            auto.AddItem(new MenuItem("SmiteKS", "Smite Killsteal").SetValue(true));
             auto.AddItem(new MenuItem("SmiteSteal", "Smite Steal Baron Dragon").SetValue(true));
             var Drawing = Menu.AddSubMenu(new Menu("Drawing", "Drawing"));
             Drawing.AddItem(new MenuItem("DrawMode", "Draw Combo Mode").SetValue(true));
