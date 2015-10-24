@@ -101,7 +101,8 @@ namespace Rengar
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && !Player.HasBuff("rengarpassivebuff") && Q.IsReady() && !(mode == "Snare" && Player.Mana == 5))
             {
                 var x = Prediction.GetPrediction(args.Target as Obj_AI_Base,Player.AttackCastDelay + 0.04f);
-                if (Player.Distance(x.UnitPosition) <= Player.BoundingRadius + Player.AttackRange + args.Target.BoundingRadius)
+                if (Player.Position.To2D().Distance(x.UnitPosition.To2D()) 
+                    >= Player.BoundingRadius + Player.AttackRange + args.Target.BoundingRadius)
                 {
                     args.Process = false;
                     Q.Cast();
@@ -311,7 +312,8 @@ namespace Rengar
                         {
                             W.Cast(targetW);
                         }
-                        if (Orbwalking.CanMove(extrawindup))
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup) 
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x=> x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                         {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
@@ -334,15 +336,19 @@ namespace Rengar
                     }
                     else
                     {
-                        var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
-                        if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup)
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                         {
-                            E.Cast(targetE);
-                        }
-                        foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
-                        {
-                            if (E.IsReady())
-                                E.Cast(target);
+                            var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+                            if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                            {
+                                E.Cast(targetE);
+                            }
+                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
+                            {
+                                if (E.IsReady())
+                                    E.Cast(target);
+                            }
                         }
                     }
                 }
@@ -355,7 +361,8 @@ namespace Rengar
                         {
                             W.Cast(targetW);
                         }
-                        if ( Orbwalking.CanMove(extrawindup))
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup) 
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x=> x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                         {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
@@ -390,8 +397,10 @@ namespace Rengar
                             Q.Cast();
                         }
 
-                        if (Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) == 0 && !Player.HasBuff("rengarpassivebuff") && !Player.IsDashing())
-                        {
+                        if (Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) == 0 && !Player.HasBuff("rengarpassivebuff") && !Player.IsDashing()
+                            && (Player.IsDashing() || Orbwalking.CanMove(extrawindup)
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x)))))
+                            {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
@@ -414,7 +423,8 @@ namespace Rengar
                         {
                             W.Cast(targetW);
                         }
-                        if (Orbwalking.CanMove(extrawindup))
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup)
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                         {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
@@ -445,7 +455,9 @@ namespace Rengar
                             }
 
                         }
-                        if (Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) == 0 && !Player.HasBuff("rengarpassivebuff"))
+                        if (Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) == 0 && !Player.HasBuff("rengarpassivebuff")
+                            && (Player.IsDashing() || Orbwalking.CanMove(extrawindup) 
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x=> x.IsValidTarget() && Orbwalking.InAutoAttackRange(x)))))
                         {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
@@ -469,7 +481,8 @@ namespace Rengar
                         {
                             W.Cast(targetW);
                         }
-                        if (Orbwalking.CanMove(extrawindup))
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup)
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                         {
                             var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
                             if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
@@ -541,7 +554,7 @@ namespace Rengar
             {
                 W.Cast();
             }
-            if (W.IsReady())
+            if (W.IsReady() && Player.Mana != 5)
             {
                 foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(500) && !x.IsZombie))
                 {

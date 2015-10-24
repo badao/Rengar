@@ -96,8 +96,10 @@ namespace Rengar
             Mixed,
             LaneClear,
             Combo,
+            OrbwalkPassive,
             None
         }
+        // Buffs that disable attack and movement
         public static readonly BuffType[] DisableBuff =
         {
             BuffType.Charm,
@@ -114,7 +116,7 @@ namespace Rengar
             "dariusnoxiantacticsonh", "fioraflurry", "garenq",
             "hecarimrapidslash", "jaxempowertwo", "jaycehypercharge", "leonashieldofdaybreak", "luciane", "lucianq",
             "monkeykingdoubleattack", "mordekaisermaceofspades", "nasusq", "nautiluspiercinggaze", "netherblade",
-            "parley", "poppydevastatingblow", "powerfist", "renektonpreexecute", "shyvanadoubleattack",
+            "parley", "poppydevastatingblow", "powerfist", "renektonpreexecute", "rengarq", "shyvanadoubleattack",
             "sivirw", "takedown", "talonnoxiandiplomacy", "trundletrollsmash", "vaynetumble", "vie", "volibearq",
             "xenzhaocombotarget", "yorickspectral", "reksaiq"
         };
@@ -124,7 +126,7 @@ namespace Rengar
         {
             "jarvanivcataclysmattack", "monkeykingdoubleattack",
             "shyvanadoubleattack", "shyvanadoubleattackdragon", "zyragraspingplantattack", "zyragraspingplantattack2",
-            "zyragraspingplantattackfire", "zyragraspingplantattack2fire"
+            "zyragraspingplantattackfire", "zyragraspingplantattack2fire", "viktorpowertransfer", "sivirwattackbounce"
         };
 
         //Spells that are attacks even if they dont have the "attack" word in their name.
@@ -133,22 +135,28 @@ namespace Rengar
             "caitlynheadshotmissile", "frostarrow", "garenslash2",
             "kennenmegaproc", "lucianpassiveattack", "masteryidoublestrike", "quinnwenhanced", "renektonexecute",
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
-            "xenzhaothrust3"
+            "xenzhaothrust3", "viktorqbuff"
         };
 
         // Champs whose auto attacks can't be cancelled
         private static readonly string[] NoCancelChamps = { "Kalista" };
         public static int LastAATick;
+        public static int LastAACommandTick;
         public static bool Attack = true;
         public static bool DisableNextAttack;
         public static bool Move = true;
+        public static bool StopMove = false;
+        public static int winduptime;
         public static int LastMoveCommandT;
         public static Vector3 LastMoveCommandPosition = Vector3.Zero;
         private static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
-        private static int _delay;
+        //private static int _delay;
         private static float _minDistance = 400;
+        private static bool _missileLaunched;
         private static readonly Random _random = new Random(DateTime.Now.Millisecond);
+
+        // dash
         public static AttackableUnit DashTarget;
         public static int dashcount, dashtime;
         public static bool dashwait;
@@ -157,8 +165,9 @@ namespace Rengar
         {
             Player = ObjectManager.Player;
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
-            GameObject.OnCreate += Obj_SpellMissile_OnCreate;
+            MissileClient.OnCreate += MissileClient_OnCreate;
             Spellbook.OnStopCast += SpellbookOnStopCast;
+            Obj_AI_Base.OnDoCast += Obj_AI_Base_OnDoCast;
             CustomEvents.Unit.OnDash += Unit_OnDash;
         }
 
@@ -166,25 +175,12 @@ namespace Rengar
         {
             if (!sender.IsMe)
                 return;
-            LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 + args.Duration;
+            LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 - (int)Player.AttackCastDelay*1000 + args.Duration;
             DashTarget = _lastTarget;
             dashcount = Utils.GameTimeTickCount;
             dashwait = true;
             dashtime = args.Duration;
         }
-
-        private static void Obj_SpellMissile_OnCreate(GameObject sender, EventArgs args)
-        {
-            if (sender.IsValid<Obj_SpellMissile>())
-            {
-                var missile = (Obj_SpellMissile)sender;
-                if (missile.SpellCaster.IsValid<Obj_AI_Hero>() && IsAutoAttack(missile.SData.Name))
-                {
-                    FireAfterAttack(missile.SpellCaster, _lastTarget);
-                }
-            }
-        }
-
         /// <summary>
         ///     This event is fired before the player auto attacks.
         /// </summary>
@@ -199,6 +195,9 @@ namespace Rengar
         ///     This event is fired after a unit finishes auto-attacking another unit (Only works with player for now).
         /// </summary>
         public static event AfterAttackEvenH AfterAttack;
+
+
+        public static event AfterAttackEvenH AfterAttackNoTarget;
 
         /// <summary>
         ///     Gets called on target changes
@@ -232,9 +231,15 @@ namespace Rengar
 
         private static void FireAfterAttack(AttackableUnit unit, AttackableUnit target)
         {
-            if (AfterAttack != null && target.IsValidTarget())
+            if (AfterAttack != null)
             {
-                AfterAttack(unit, target);
+                if (target.IsValidTarget())
+                    AfterAttack(unit, target);
+            }
+            if (AfterAttackNoTarget != null)
+            {
+                if (!target.IsValidTarget())
+                    AfterAttackNoTarget(unit, null);
             }
         }
 
@@ -321,13 +326,9 @@ namespace Rengar
         /// </summary>
         public static bool CanAttack()
         {
-            if (LastAATick <= Utils.GameTimeTickCount)
-            {
-                return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack
-                                    && !DisableBuff.Where(x => Player.HasBuffOfType(x)).Any() && !Player.IsDashing();
-            }
-
-            return false;
+            return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack
+                && !DisableBuff.Where(x => Player.HasBuffOfType(x)).Any() && !Player.IsDashing()
+                && (Utils.GameTimeTickCount >= LastAACommandTick + Player.AttackCastDelay * 1000 + 150 + Game.Ping);
         }
 
         /// <summary>
@@ -335,20 +336,28 @@ namespace Rengar
         /// </summary>
         public static bool CanMove(float extraWindup)
         {
-            if (LastAATick <= Utils.GameTimeTickCount)
+            if (!Move)
             {
-                return Move && NoCancelChamps.Contains(Player.ChampionName)
-                    ? (Utils.GameTimeTickCount - LastAATick > 250)
-                    : (Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup);
+                return false;
             }
 
-            return false;
+            if (_missileLaunched && Orbwalker.MissileCheck)
+            {
+                return true;
+            }
+            if (StopMove == false)
+            {
+                return true;
+            }
+            return NoCancelChamps.Contains(Player.ChampionName) ||
+                ((Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup)
+                && (Utils.GameTimeTickCount >= LastAACommandTick + Player.AttackCastDelay * 1000 + 100 + extraWindup + Game.Ping));
         }
 
-        public static void SetMovementDelay(int delay)
-        {
-            _delay = delay;
-        }
+        //public static void SetMovementDelay(int delay)
+        //{
+        //    _delay = delay;
+        //}
 
         public static void SetMinimumOrbwalkDistance(float d)
         {
@@ -365,54 +374,111 @@ namespace Rengar
             return LastMoveCommandPosition;
         }
 
-        private static void MoveTo(Vector3 position,
+        //public static void MoveTo(Vector3 position,
+        //    float holdAreaRadius = 0,
+        //    bool overrideTimer = false,
+        //    bool useFixedDistance = true,
+        //    bool randomizeMinDistance = true)
+        //{
+        //    if (Utils.GameTimeTickCount - LastMoveCommandT < _delay + _random.Next(0, 15) && !overrideTimer)
+        //    {
+        //        return;
+        //    }
+
+        //    LastMoveCommandT = Utils.GameTimeTickCount;
+
+        //    var playerPosition = Player.ServerPosition;
+
+        //    if (playerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
+        //    {
+        //        if (Player.Path.Length > 0)
+        //        {
+        //            Player.IssueOrder(GameObjectOrder.Stop, playerPosition);
+        //            LastMoveCommandPosition = playerPosition;
+        //        }
+        //        return;
+        //    }
+
+        //    var point = position;
+        //    if (useFixedDistance)
+        //    {
+        //        point = playerPosition.Extend(
+        //            position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
+        //    }
+        //    else
+        //    {
+        //        if (randomizeMinDistance)
+        //        {
+        //            point = playerPosition.Extend(position, (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance);
+        //        }
+        //        else if (playerPosition.Distance(position) > _minDistance)
+        //        {
+        //            point = playerPosition.Extend(position, _minDistance);
+        //        }
+        //    }
+
+        //    Player.IssueOrder(GameObjectOrder.MoveTo, point);
+        //    LastMoveCommandPosition = point;
+        //}
+
+        public static void MoveTo(Vector3 position,
             float holdAreaRadius = 0,
             bool overrideTimer = false,
-            bool useFixedDistance = false,
-            bool randomizeMinDistance = false)
+            bool useFixedDistance = true,
+            bool randomizeMinDistance = true)
         {
-            if (Utils.GameTimeTickCount - LastMoveCommandT < _delay && !overrideTimer)
-            {
-                return;
-            }
+            var playerPosition = Player.ServerPosition;
 
-            LastMoveCommandT = Utils.GameTimeTickCount;
-
-            if (Player.ServerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
+            if (playerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
             {
-                if (Player.Path.Count() > 1)
+                if (Player.Path.Length > 0)
                 {
-                    Player.IssueOrder((GameObjectOrder)10, Player.ServerPosition);
-                    Player.IssueOrder(GameObjectOrder.HoldPosition, Player.ServerPosition);
-                    LastMoveCommandPosition = Player.ServerPosition;
+                    Player.IssueOrder(GameObjectOrder.Stop, playerPosition);
+                    LastMoveCommandPosition = playerPosition;
+                    LastMoveCommandT = Utils.GameTimeTickCount - 70;
                 }
                 return;
             }
 
             var point = position;
-            if (useFixedDistance)
+
+            if (Player.Distance(point, true) < 150 * 150)
             {
-                point = Player.ServerPosition +
-                        (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance) *
-                        (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
+                point = playerPosition.Extend(position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
             }
-            else
+            var angle = 0f;
+            var currentPath = Player.GetWaypoints();
+            if (currentPath.Count > 1 && currentPath.PathLength() > 100)
             {
-                if (randomizeMinDistance)
+                var movePath = Player.GetPath(point);
+
+                if (movePath.Length > 1)
                 {
-                    point = Player.ServerPosition +
-                            (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance *
-                            (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
+                    var v1 = currentPath[1] - currentPath[0];
+                    var v2 = movePath[1] - movePath[0];
+                    angle = v1.AngleBetween(v2.To2D());
+                    var distance = movePath.Last().To2D().Distance(currentPath.Last(), true);
+
+                    if ((angle < 10 && distance < 500 * 500) || distance < 50 * 50)
+                    {
+                        return;
+                    }
                 }
-                else if (Player.ServerPosition.Distance(position) > _minDistance)
-                {
-                    point = Player.ServerPosition +
-                            _minDistance * (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
-                }
+            }
+
+            if (Utils.GameTimeTickCount - LastMoveCommandT < (70 + Math.Min(60, Game.Ping)) && !overrideTimer && angle < 60)
+            {
+                return;
+            }
+
+            if (angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
+            {
+                return;
             }
 
             Player.IssueOrder(GameObjectOrder.MoveTo, point);
             LastMoveCommandPosition = point;
+            LastMoveCommandT = Utils.GameTimeTickCount;
         }
 
         /// <summary>
@@ -422,29 +488,36 @@ namespace Rengar
             Vector3 position,
             float extraWindup = 90,
             float holdAreaRadius = 0,
-            bool useFixedDistance = false,
-            bool randomizeMinDistance = false)
+            bool useFixedDistance = true,
+            bool randomizeMinDistance = true)
         {
             try
             {
-                if (CanMove(extraWindup))
-                {
-                    MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
-                }
-
-                if (target.IsValidTarget() && CanAttack() && InAutoAttackRange(target))
+                if (target.IsValidTarget() && CanAttack())
                 {
                     DisableNextAttack = false;
                     FireBeforeAttack(target);
 
                     if (!DisableNextAttack)
                     {
+                        if (!NoCancelChamps.Contains(Player.ChampionName))
+                        {
+                            LastAACommandTick = Utils.GameTimeTickCount - 4;
+                            //LastAATick = Utils.GameTimeTickCount + Game.Ping + 100 - (int)(ObjectManager.Player.AttackCastDelay * 1000f);
+                            _missileLaunched = false;
+                            StopMove = true;
+                        }
                         Player.IssueOrder(GameObjectOrder.AttackUnit, target);
-                        LastAATick = Utils.GameTimeTickCount + Game.Ping / 2;
                         _lastTarget = target;
                         return;
                     }
                 }
+
+                if (CanMove(extraWindup))
+                {
+                    MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
+                }
+                winduptime = (int)extraWindup;
             }
             catch (Exception e)
             {
@@ -458,6 +531,7 @@ namespace Rengar
         public static void ResetAutoAttackTimer()
         {
             LastAATick = 0;
+            LastAACommandTick = 0;
         }
 
         private static void SpellbookOnStopCast(Spellbook spellbook, SpellbookStopCastEventArgs args)
@@ -468,15 +542,28 @@ namespace Rengar
             }
         }
 
+        private static void MissileClient_OnCreate(GameObject sender, EventArgs args)
+        {
+            if (!Orbwalker.Enabled)
+                return;
+            var missile = sender as MissileClient;
+            if (missile != null && missile.SpellCaster.IsMe && IsAutoAttack(missile.SData.Name))
+            {
+                // _missileLaunched = true;
+            }
+        }
+
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
+            if (!Orbwalker.Enabled)
+                return;
             try
             {
                 var spellName = Spell.SData.Name;
 
                 if (IsAutoAttackReset(spellName) && unit.IsMe)
                 {
-                    Utility.DelayAction.Add(250, ResetAutoAttackTimer);
+                    ResetAutoAttackTimer();
                 }
 
                 if (!IsAutoAttack(spellName))
@@ -488,7 +575,8 @@ namespace Rengar
                     (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
                 {
                     LastAATick = Utils.GameTimeTickCount - Game.Ping / 2;
-
+                    _missileLaunched = false;
+                    StopMove = true;
                     if (Spell.Target is Obj_AI_Base)
                     {
                         var target = (Obj_AI_Base)Spell.Target;
@@ -498,11 +586,9 @@ namespace Rengar
                             _lastTarget = target;
                         }
 
-                        if (unit.IsMelee())
-                        {
-                            DelayAction.Add(
-                                (int)(unit.AttackCastDelay * 1000 + 40), () => FireAfterAttack(unit, _lastTarget),1);
-                        }
+                        //Trigger it for ranged until the missiles catch normal attacks again!
+                        //Utility.DelayAction.Add(
+                        //    (int)(unit.AttackCastDelay * 1000 + 40), () => FireAfterAttack(unit, _lastTarget));
                     }
                 }
 
@@ -513,7 +599,36 @@ namespace Rengar
                 Console.WriteLine(e);
             }
         }
+        private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (!Orbwalker.Enabled)
+                return;
+            try
+            {
+                var spellName = args.SData.Name;
 
+                if (!IsAutoAttack(spellName))
+                {
+                    return;
+                }
+
+                if (sender.IsMe &&
+                    (args.Target is Obj_AI_Base || args.Target is Obj_BarracksDampener || args.Target is Obj_HQ))
+                {
+                    _missileLaunched = true;
+                    Utility.DelayAction.Add(37 > Game.Ping ? 50 - Game.Ping : 0, () => StopMove = false);
+                    if (args.Target is Obj_AI_Base)
+                    {
+                        //Trigger it for ranged until the missiles catch normal attacks again!
+                        Utility.DelayAction.Add(37 > Game.Ping ? 50 - Game.Ping : 0, () => FireAfterAttack(sender, _lastTarget));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
         public class BeforeAttackEventArgs
         {
             private bool _process = true;
@@ -537,45 +652,70 @@ namespace Rengar
         /// </summary>
         public class Orbwalker
         {
+            private static bool enabled;
+
+            public static bool Enabled
+            {
+                get
+                {
+                    return enabled;
+                }
+
+                set
+                {
+                    enabled = value;
+                    if (_config != null)
+                    {
+                        _config.Item("enableOption").SetValue(value);
+                    }
+                }
+            }
             private const float LaneClearWaitTimeMod = 2f;
             public static Menu _config;
             private readonly Obj_AI_Hero Player;
             private Obj_AI_Base _forcedTarget;
             private OrbwalkingMode _mode = OrbwalkingMode.None;
-            private Vector3 _orbwalkingPoint;
+            public Vector3 _orbwalkingPoint;
             private Obj_AI_Minion _prevMinion;
+            public static List<Orbwalker> Instances = new List<Orbwalker>();
 
             public Orbwalker(Menu attachToMenu)
             {
                 _config = attachToMenu;
+                _config.AddItem(new MenuItem("enableOption", "Enable Orbwalker").SetValue(true))
+                    .ValueChanged += (sender, args) => enabled = args.GetNewValue<bool>();
+                enabled = _config.Item("enableOption").GetValue<bool>();
                 /* Drawings submenu */
                 var drawings = new Menu("Drawings", "drawings");
                 drawings.AddItem(
                     new MenuItem("AACircle", "AACircle").SetShared()
-                        .SetValue(new Circle(true, Color.FromArgb(255, 255, 0, 255))));
+                        .SetValue(new Circle(true, Color.FromArgb(120, 255, 0, 0))));
                 drawings.AddItem(
                     new MenuItem("AACircle2", "Enemy AA circle").SetShared()
                         .SetValue(new Circle(false, Color.FromArgb(255, 255, 0, 255))));
                 drawings.AddItem(
                     new MenuItem("HoldZone", "HoldZone").SetShared()
-                        .SetValue(new Circle(false, Color.FromArgb(255, 255, 0, 255))));
+                        .SetValue(new Circle(false, Color.FromArgb(3, 187, 246))));
                 _config.AddSubMenu(drawings);
 
                 /* Misc options */
                 var misc = new Menu("Misc", "Misc");
                 misc.AddItem(
-                    new MenuItem("HoldPosRadius", "Hold Position Radius").SetShared().SetValue(new Slider(0, 0, 250)));
+                    new MenuItem("HoldPosRadius", "Hold Position Radius").SetShared().SetValue(new Slider(50, 35, 250)));
                 misc.AddItem(new MenuItem("PriorizeFarm", "Priorize farm over harass").SetShared().SetValue(true));
+
                 _config.AddSubMenu(misc);
 
+                /* Missile check */
+                _config.AddItem(new MenuItem("MissileCheck", "Use Missile Check").SetShared().SetValue(true));
 
                 /* Delay sliders */
                 _config.AddItem(
                     new MenuItem("ExtraWindup", "Extra windup time").SetShared().SetValue(new Slider(80, 0, 200)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetShared().SetValue(new Slider(0, 0, 200)));
-                _config.AddItem(
-                    new MenuItem("MovementDelay", "Movement delay").SetShared().SetValue(new Slider(80, 0, 250)))
-                    .ValueChanged += (sender, args) => SetMovementDelay(args.GetNewValue<Slider>().Value);
+                //_config.AddItem(
+                //    new MenuItem("MovementDelay", "Movement delay").SetShared().SetValue(new Slider(30, 0, 250)))
+                //    .ValueChanged += (sender, args) => SetMovementDelay(args.GetNewValue<Slider>().Value);
 
 
                 /*Load the menu*/
@@ -590,10 +730,14 @@ namespace Rengar
                 _config.AddItem(
                     new MenuItem("Orbwalk", "Combo").SetShared().SetValue(new KeyBind(32, KeyBindType.Press)));
 
-                _delay = _config.Item("MovementDelay").GetValue<Slider>().Value;
+
+                //_delay = _config.Item("MovementDelay").GetValue<Slider>().Value;
+
+
                 Player = ObjectManager.Player;
                 Game.OnUpdate += GameOnOnGameUpdate;
                 Drawing.OnDraw += DrawingOnOnDraw;
+                Instances.Add(this);
             }
 
             public virtual bool InAutoAttackRange(AttackableUnit target)
@@ -604,6 +748,11 @@ namespace Rengar
             private int FarmDelay
             {
                 get { return _config.Item("FarmDelay").GetValue<Slider>().Value; }
+            }
+
+            public static bool MissileCheck
+            {
+                get { return _config.Item("MissileCheck").GetValue<bool>(); }
             }
 
             public OrbwalkingMode ActiveMode
@@ -672,7 +821,7 @@ namespace Rengar
                 _orbwalkingPoint = point;
             }
 
-            private bool ShouldWait()
+            public bool ShouldWait()
             {
                 return
                     ObjectManager.Get<Obj_AI_Minion>()
@@ -688,7 +837,6 @@ namespace Rengar
             public virtual AttackableUnit GetTarget()
             {
                 AttackableUnit result = null;
-
                 if ((ActiveMode == OrbwalkingMode.Mixed || ActiveMode == OrbwalkingMode.LaneClear) &&
                     !_config.Item("PriorizeFarm").GetValue<bool>())
                 {
@@ -703,18 +851,19 @@ namespace Rengar
                 if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed ||
                     ActiveMode == OrbwalkingMode.LastHit)
                 {
-                    foreach (var minion in
+                    var MinionList =
                         ObjectManager.Get<Obj_AI_Minion>()
                             .Where(
                                 minion =>
                                     minion.IsValidTarget() && InAutoAttackRange(minion) &&
                                     minion.Health <
                                     2 *
-                                    (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod))
-                        )
+                                    (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod));
+
+                    foreach (var minion in MinionList)
                     {
                         var t = (int)(Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
-                                1000 * (int)Player.Distance(minion.Position) / (int)GetMyProjectileSpeed();
+                                1000 * (int)Player.Distance(minion) / (int)GetMyProjectileSpeed();
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
 
                         if (minion.Team != GameObjectTeam.Neutral && MinionManager.IsMinion(minion, true))
@@ -780,7 +929,7 @@ namespace Rengar
                         ObjectManager.Get<Obj_AI_Minion>()
                             .Where(
                                 mob =>
-                                    mob.IsValidTarget() && InAutoAttackRange(mob) && mob.Team == GameObjectTeam.Neutral)
+                                    mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) && mob.CharData.BaseSkinName != "gangplankbarrel")
                             .MaxOrDefault(mob => mob.MaxHealth);
                     if (result != null)
                     {
@@ -806,7 +955,7 @@ namespace Rengar
 
                         result = (from minion in
                                       ObjectManager.Get<Obj_AI_Minion>()
-                                          .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion))
+                                          .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion) && minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
                                       HealthPrediction.LaneClearHealthPrediction(
                                           minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay)
@@ -827,21 +976,18 @@ namespace Rengar
 
             private void GameOnOnGameUpdate(EventArgs args)
             {
+                if (!Orbwalker.Enabled)
+                    return;
                 if (dashwait == true)
                 {
-                    if (DashTarget == null)
-                        dashwait = false;
-                    else
+                    if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
                     {
-                        if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
-                        {
-                            FireAfterAttack(Player, DashTarget);
-                            dashwait = false;
-                        }
-                        if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
-                        {
-                            dashwait = false;
-                        }
+                        FireAfterAttack(Player, DashTarget);
+                        dashwait = false;
+                    }
+                    if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
+                    {
+                        dashwait = false;
                     }
                 }
                 try
@@ -861,7 +1007,7 @@ namespace Rengar
                     Orbwalk(
                         target, (_orbwalkingPoint.To2D().IsValid()) ? _orbwalkingPoint : Game.CursorPos,
                         _config.Item("ExtraWindup").GetValue<Slider>().Value,
-                        _config.Item("HoldPosRadius").GetValue<Slider>().Value,false,false);
+                        _config.Item("HoldPosRadius").GetValue<Slider>().Value, false, false);
                 }
                 catch (Exception e)
                 {
@@ -871,6 +1017,8 @@ namespace Rengar
 
             private void DrawingOnOnDraw(EventArgs args)
             {
+                if (!Orbwalker.Enabled)
+                    return;
                 if (_config.Item("AACircle").GetValue<Circle>().Active)
                 {
                     Render.Circle.DrawCircle(
@@ -895,6 +1043,7 @@ namespace Rengar
                         Player.Position, _config.Item("HoldPosRadius").GetValue<Slider>().Value,
                         _config.Item("HoldZone").GetValue<Circle>().Color);
                 }
+
             }
         }
     }
