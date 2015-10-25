@@ -983,13 +983,13 @@ namespace Rengar
                     if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
                     {
                         FireAfterAttack(Player, DashTarget);
-                        StopMove == false
+                        StopMove == false;
                         dashwait = false;
                     }
                     if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
                     {
                         FireAfterAttack(Player, DashTarget);
-                        StopMove == false
+                        StopMove == false;
                         dashwait = false;
                     }
                 }
