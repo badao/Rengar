@@ -987,6 +987,7 @@ namespace Rengar
                     }
                     if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
                     {
+                        FireAfterAttack(Player, DashTarget);
                         dashwait = false;
                     }
                 }
