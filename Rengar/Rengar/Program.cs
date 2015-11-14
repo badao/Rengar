@@ -599,23 +599,6 @@ namespace Rengar
                     }
                 }
             }
-            if (hasSmite && Player.Health*100/Player.MaxHealth <= autoSmiteHeal)
-            {
-                if (SmiteSlot.IsReady())
-                {
-                    if (hasSmitePink && Player.CountEnemiesInRange(800) != 0)
-                    {
-                        var creep = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral).Where(x => x.Name != "SRU_Dragon" && x.Name != "SRU_Baron");
-                        {
-                            foreach (var x in creep.Where(y => Player.Distance(y.Position) <= Player.BoundingRadius + 500 + y.BoundingRadius))
-                            {
-                                if (x != null && x.Health <= SmiteDamage)
-                                    Player.Spellbook.CastSpell(SmiteSlot, x);
-                            }
-                        }
-                    }
-                }
-            }
             if (Player.HasBuffOfType(BuffType.Stun) || Player.HasBuffOfType(BuffType.Taunt) || Player.HasBuffOfType(BuffType.Suppression)
                 || Player.HasBuffOfType(BuffType.Knockup) || Player.HasBuffOfType(BuffType.Knockback) || Player.HasBuffOfType(BuffType.Fear))
             {
@@ -661,36 +644,14 @@ namespace Rengar
         {
             get
             {
-                return Items.HasItem(ItemData.Skirmishers_Sabre.Id, Player) || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Devourer.Id, Player)
-                    || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Skirmishers_Sabre_Enchantment_Warrior.Id, Player)
-                    || Items.HasItem(ItemData.Bamis_Cinder_Skirmishers_Sabre_Enchantment_Cinderhulk.Id, Player);
+                return hasSmite && (new string[] {"s5_summonersmiteduel"}).Contains(Player.GetSpell(SmiteSlot).Name);
             }
         }
         private static bool hasSmiteBlue
         {
             get
             {
-                return Items.HasItem(ItemData.Stalkers_Blade.Id, Player) || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Devourer.Id, Player)
-                    || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Stalkers_Blade_Enchantment_Warrior.Id, Player)
-                    || Items.HasItem(ItemData.Bamis_Cinder_Stalkers_Blade_Enchantment_Cinderhulk.Id, Player);
-            }
-        }
-        private static bool hasSmitePink
-        {
-            get
-            {
-                return Items.HasItem(ItemData.Rangers_Trailblazer.Id, Player) || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Devourer.Id, Player)
-                    || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Rangers_Trailblazer_Enchantment_Warrior.Id, Player)
-                    || Items.HasItem(ItemData.Bamis_Cinder_Rangers_Trailblazer_Enchantment_Cinderhulk.Id, Player);
-            }
-        }
-        private static bool hasSmiteGrey
-        {
-            get
-            {
-                return Items.HasItem(ItemData.Poachers_Knife.Id, Player) || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Devourer.Id, Player)
-                    || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Magus.Id, Player) || Items.HasItem(ItemData.Poachers_Knife_Enchantment_Warrior.Id, Player)
-                    || Items.HasItem(ItemData.Bamis_Cinder_Poachers_Knife_Enchantment_Cinderhulk.Id, Player);
+                return hasSmite && (new string[] { "s5_summonersmiteplayerganker" }).Contains(Player.GetSpell(SmiteSlot).Name);
             }
         }
         private static int SmiteRedDamage { get { return 54 + 6*Player.Level; } }
