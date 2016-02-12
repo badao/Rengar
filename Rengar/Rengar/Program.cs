@@ -22,6 +22,7 @@ namespace Rengar
 
         private static Menu Menu;
 
+        private static int LastClearTick;
         private static string mode { get { return Menu.Item("ComboMode").GetValue<StringList>().SelectedValue; } }
         private static string youmumu { get { return Menu.Item("Youmumu").GetValue<StringList>().SelectedValue; } }
         static void Main(string[] args)
@@ -156,6 +157,7 @@ namespace Rengar
         private static int extrawindup { get { return Orbwalking.Orbwalker._config.Item("ExtraWindup").GetValue<Slider>().Value; } }
         public static void Game_OnGameUpdate(EventArgs args)
         {
+            //Game.PrintChat(Player.Mana.ToString() + " " + Save.ToString());
             if (Player.IsDead)
                 return;
             //if (hasSmite)
@@ -224,11 +226,13 @@ namespace Rengar
             }
             else if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (Player.Mana < 5 || (Player.Mana == 5 && !Save))
+                if ((Player.Mana < 5 || (Player.Mana == 5 && !Save)) && Utils.GameTimeTickCount - LastClearTick >= 1000)
                 {
                     if (Q.IsReady() && useQ)
                     {
                         Q.Cast();
+                        if (Player.Mana == 4)
+                            LastClearTick = Utils.GameTimeTickCount;
                     }
                     else
                     {
@@ -524,7 +528,7 @@ namespace Rengar
         }
         public static void clear()
         {
-            if (Player.Mana < 5 || (Player.Mana == 5 && !Save))
+            if ((Player.Mana < 5 || (Player.Mana == 5 && !Save)) && Utils.GameTimeTickCount - LastClearTick >= 1000)
             {
                 var targetW1 = MinionManager.GetMinions(Player.Position, 500, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
                 var targetE1 = MinionManager.GetMinions(Player.Position, E.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
@@ -532,19 +536,39 @@ namespace Rengar
                 var targetE2 = MinionManager.GetMinions(Player.Position, E.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth).FirstOrDefault();
                 if (W.IsReady() && targetW1 != null && useW)
                 {
-                    W.Cast(targetW1);
+                    if (W.Cast(targetW1) == Spell.CastStates.SuccessfullyCasted)
+                    {
+                        if (Player.Mana == 4)
+                            LastClearTick = Utils.GameTimeTickCount;
+                        return;
+                    }
                 }
                 if (W.IsReady() && targetW2 != null && useW)
                 {
-                    W.Cast(targetW2);
+                    if (W.Cast(targetW2) == Spell.CastStates.SuccessfullyCasted)
+                    {
+                        if (Player.Mana == 4)
+                            LastClearTick = Utils.GameTimeTickCount;
+                        return;
+                    }
                 }
                 if (E.IsReady() && targetE1 != null && useE)
                 {
-                    E.Cast(targetE1);
+                    if(E.Cast(targetE1) == Spell.CastStates.SuccessfullyCasted)
+                    {
+                        if (Player.Mana == 4)
+                            LastClearTick = Utils.GameTimeTickCount;
+                        return;
+                    }
                 }
                 if (E.IsReady() && targetE2 != null && useE)
                 {
-                    E.Cast(targetE2);
+                    if (E.Cast(targetE2) == Spell.CastStates.SuccessfullyCasted)
+                    {
+                        if (Player.Mana == 4)
+                            LastClearTick = Utils.GameTimeTickCount;
+                        return;
+                    }
                 }
             }
         }
