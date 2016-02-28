@@ -20,6 +20,8 @@ namespace Rengar
 
         private static Spell Q, W, E, R, summoner1, summoner2;
 
+        private static int QcastTick, WcastTick, EcastTick;
+
         private static Menu Menu;
 
         private static int LastClearTick;
@@ -39,7 +41,7 @@ namespace Rengar
             W = new Spell(SpellSlot.W,300);
             E = new Spell(SpellSlot.E,1000);
             R = new Spell(SpellSlot.R);
-            E.SetSkillshot(0.25f, 70, 1500, true, SkillshotType.SkillshotLine);
+            E.SetSkillshot(0.125f, 70, 1500, true, SkillshotType.SkillshotLine);
             E.MinHitChance = HitChance.Medium;
             W.SetSkillshot(0.25f, 500, 2000, false, SkillshotType.SkillshotCircle);
             W.MinHitChance = HitChance.Medium;
@@ -95,6 +97,57 @@ namespace Rengar
             LeagueSharp.Drawing.OnDraw += Drawing_OnDraw;
             Obj_AI_Base.OnBuffRemove += Obj_AI_Base_OnBuffRemove;
             Orbwalking.BeforeAttack += Orbwalking_BeforeAttack;
+            Spellbook.OnCastSpell += Spellbook_OnCastSpell;
+        }
+        private static int PlayerMana()
+        {
+            int mana = (int)Player.Mana;
+            if (Environment.TickCount - QcastTick < 700 + Game.Ping)
+                mana++;
+            if (Environment.TickCount - WcastTick < 700 + Game.Ping)
+                mana++;
+            if (Environment.TickCount - EcastTick < 700 + Game.Ping)
+                mana++;
+            return mana;
+        }
+        private static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
+        {
+            if (!sender.Owner.IsMe)
+                return;
+            //Game.PrintChat(args.Slot.ToString());
+            if (Player.Mana == 5)
+                return;
+            if (args.Slot == SpellSlot.Q)
+            {
+                QcastTick = Environment.TickCount;
+                if (PlayerMana() > 5)
+                {
+                    args.Process = false;
+                    QcastTick = 0;
+                }
+            }
+            if (args.Slot == SpellSlot.W)
+            {
+                WcastTick = Environment.TickCount;
+                if (PlayerMana() > 5)
+                {
+                    args.Process = false;
+                    WcastTick = 0;
+                }
+            }
+            if (args.Slot == SpellSlot.E)
+            {
+                EcastTick = Environment.TickCount;
+                if (PlayerMana() > 5)
+                {
+                    args.Process = false;
+                    EcastTick = 0;
+                }           
+            }
+            //if (Player.Mana < 3)
+            //    return;
+            //if (PlayerMana() > 5)
+            //    args.Process = false;
         }
 
         private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args)
@@ -157,7 +210,7 @@ namespace Rengar
         private static int extrawindup { get { return Orbwalking.Orbwalker._config.Item("ExtraWindup").GetValue<Slider>().Value; } }
         public static void Game_OnGameUpdate(EventArgs args)
         {
-            //Game.PrintChat(Player.Mana.ToString() + " " + Save.ToString());
+            //Game.PrintChat(PlayerMana().ToString());
             if (Player.IsDead)
                 return;
             //if (hasSmite)
@@ -276,11 +329,50 @@ namespace Rengar
                 if (args.Duration - 100 - Game.Ping / 2 > 0)
                 {
                     Utility.DelayAction.Add(
-                                   (int)(/*Player.AttackCastDelay * 1000 + */args.Duration - 100 - Game.Ping / 2), CastItem);
+                                   (int)(/*Player.AttackCastDelay * 1000 + */args.Duration - 150 - Game.Ping / 2), CastItem);
                 }
                 else
                 {
                     CastItem();
+                }
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            {
+                if(Player.Mana < 5)
+                {
+                    var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+                    if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                    {
+                        E.Cast(targetE);
+                    }
+                    foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
+                    {
+                        if (E.IsReady())
+                            E.Cast(target);
+                    }
+                }
+                if(mode == "Auto" || mode == "Snare")
+                {
+                    if (Player.Mana == 5)
+                    {
+                        var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+                        if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                        {
+                            E.Cast(targetE);
+                        }
+                        foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
+                        {
+                            if (E.IsReady())
+                                E.Cast(target);
+                        }
+                    }
+                }
+                if (mode == "Always Q" || mode == "Burst")
+                {
+                    if (Player.Mana == 5)
+                    {
+                        Q.Cast();
+                    }
                 }
             }
             //Game.Say("dash");
