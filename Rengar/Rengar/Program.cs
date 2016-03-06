@@ -65,7 +65,7 @@ namespace Rengar
 
             var spellMenu = Menu.AddSubMenu(new Menu("Spells", "Spells"));
             spellMenu.AddItem(new MenuItem("ComboSwitch", "ComboModeSwitch").SetValue(new KeyBind("T".ToCharArray()[0],KeyBindType.Press)));
-            spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto","Always Q"},0)));
+            spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Snare", "Burst","Auto","Always Q","AP mode"},0)));
             spellMenu.AddItem(new MenuItem("useSmite", "Use Smite Combo").SetValue(true));
             spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmumu while Steath").SetValue(true));
             spellMenu.AddItem(new MenuItem("Youmumu", "Youmumu while steath mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
@@ -614,13 +614,52 @@ namespace Rengar
                         }
                     }
                 }
-
+                else if (mode == "AP mode")
+                {
+                    if (Player.Mana < 5)
+                    {
+                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
+                        if (W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
+                        {
+                            W.Cast(targetW);
+                        }
+                        if (Player.IsDashing() || Orbwalking.CanMove(extrawindup)
+                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
+                        {
+                            var targetE = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+                            if (E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                            {
+                                E.Cast(targetE);
+                            }
+                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(E.Range) && !x.IsZombie))
+                            {
+                                if (E.IsReady())
+                                    E.Cast(target);
+                            }
+                        }
+                        if (Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0)
+                        {
+                            if (Orbwalking.CanMove(extrawindup) && !Orbwalking.CanAttack() /*&& dontwaitQ*/)
+                            {
+                                Q.Cast();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
+                        if (W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
+                        {
+                            W.Cast(targetW);
+                        }
+                    }
+                }
                 else Game.Say("stupid");
             }
         }
         public static void clear()
         {
-            if ((Player.Mana < 5 || (Player.Mana == 5 && !Save)) && Utils.GameTimeTickCount - LastClearTick >= 1000)
+            if ((Player.Mana < 5) && Utils.GameTimeTickCount - LastClearTick >= 1000)
             {
                 var targetW1 = MinionManager.GetMinions(Player.Position, 500, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
                 var targetE1 = MinionManager.GetMinions(Player.Position, E.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
@@ -787,19 +826,23 @@ namespace Rengar
             switch (comboMode)
             {
                 case "Snare":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 1));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 1));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Burst":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 2));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 2));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Auto":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 3));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 3));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
                 case "Always Q":
-                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q" }, 0));
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 4));
+                    _lastTick = Utils.GameTimeTickCount + 300;
+                    break;
+                case "AP mode":
+                    Menu.Item("ComboMode").SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 0));
                     _lastTick = Utils.GameTimeTickCount + 300;
                     break;
             }
