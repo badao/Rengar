@@ -69,7 +69,7 @@ namespace Rengar
             spellMenu.AddItem(new MenuItem("useSmite", "Use Smite Combo").SetValue(true));
             spellMenu.AddItem(new MenuItem("useYoumumu", "Use Youmumu while Steath").SetValue(true));
             spellMenu.AddItem(new MenuItem("Youmumu", "Youmumu while steath mode").SetValue(new StringList(new[] { "Always", "ComboMode" }, 0)));
-            //spellMenu.AddItem(new MenuItem("DontWaitReset","Dont Wait Reset AA with Q").SetValue(true));
+            spellMenu.AddItem(new MenuItem("WaitReset", "Always attack before Q").SetValue(false));
             var clear = spellMenu.AddSubMenu(new Menu("Clear","Clear"));
             clear.AddItem(new MenuItem("useQ", "use Q").SetValue(true));
             clear.AddItem(new MenuItem("useE", "use E").SetValue(true));
@@ -152,6 +152,8 @@ namespace Rengar
 
         private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args)
         {
+            if (waitReset)
+                return;
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && !Player.HasBuff("rengarpassivebuff") && Q.IsReady() && !(mode == "Snare" && Player.Mana == 5))
             {
                 var x = Prediction.GetPrediction(args.Target as Obj_AI_Base,Player.AttackCastDelay + 0.04f);
@@ -195,7 +197,7 @@ namespace Rengar
             }
         }
         private static bool notify { get { return Menu.Item("Notify").GetValue<bool>(); } }
-        //private static bool dontwaitQ { get { return Menu.Item("DontWaitReset").GetValue<bool>(); } }
+        private static bool waitReset { get { return Menu.Item("WaitReset").GetValue<bool>(); } }
         private static int autoSmiteHeal { get { return Menu.Item("AutoSmite").GetValue<Slider>().Value; } }
         private static bool useSmiteSteal { get { return Menu.Item("SmiteSteal").GetValue<bool>(); } }
         private static bool useSmiteKS { get { return Menu.Item("SmiteKS").GetValue<bool>(); } }
@@ -210,7 +212,12 @@ namespace Rengar
         private static int extrawindup { get { return Orbwalking.Orbwalker._config.Item("ExtraWindup").GetValue<Slider>().Value; } }
         public static void Game_OnGameUpdate(EventArgs args)
         {
-            //Game.PrintChat(PlayerMana().ToString());
+            //Game.PrintChat(hasSmite.ToString() + hasSmiteBlue.ToString() + hasSmiteRed.ToString() + SmiteSlot.IsReady().ToString()
+            //    + Player.GetSpell(SmiteSlot).Name);
+            //var minion = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral)
+            //    .Where(x => x.CharData.BaseSkinName.Contains("SRU_Dragon") || x.CharData.BaseSkinName.Contains("SRU_Baron")).FirstOrDefault();
+            //if (minion != null)
+            //    Game.PrintChat(minion.CharData.BaseSkinName);
             if (Player.IsDead)
                 return;
             //if (hasSmite)
@@ -705,7 +712,8 @@ namespace Rengar
         }
         public static void KillSteall()
         {
-            if (Player.Health*100/Player.MaxHealth <= Heal && Player.Mana == 5 && W.IsReady())
+            if (Player.Health*100/Player.MaxHealth <= Heal && Player.Mana == 5 && W.IsReady()
+                && (Player.Health*100/Player.MaxHealth <= 10 || Player.CountEnemiesInRange(1000) >0))
             {
                 W.Cast();
             }
@@ -729,7 +737,8 @@ namespace Rengar
             {
                 if (SmiteSlot.IsReady())
                 {
-                    var creep = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral).Where(x => x.CharData.BaseSkinName == "SRU_Dragon" || x.CharData.BaseSkinName == "SRU_Baron");
+                    var creep = MinionManager.GetMinions(800, MinionTypes.All, MinionTeam.Neutral)
+                        .Where(x => x.CharData.BaseSkinName.Contains("SRU_Dragon") || x.CharData.BaseSkinName.Contains("SRU_Baron"));
                     foreach (var x in creep.Where(y => Player.Distance(y.Position) <= Player.BoundingRadius + 500 + y.BoundingRadius))
                     {
                         if (x != null && x.Health <= SmiteDamage)
@@ -799,14 +808,14 @@ namespace Rengar
         {
             get
             {
-                return hasSmite && (new string[] {"s5_summonersmiteduel"}).Contains(Player.GetSpell(SmiteSlot).Name);
+                return hasSmite && (new string[] {"s5_summonersmiteduel"}).Contains(Player.GetSpell(SmiteSlot).Name.ToLower());
             }
         }
         private static bool hasSmiteBlue
         {
             get
             {
-                return hasSmite && (new string[] { "s5_summonersmiteplayerganker" }).Contains(Player.GetSpell(SmiteSlot).Name);
+                return hasSmite && (new string[] { "s5_summonersmiteplayerganker" }).Contains(Player.GetSpell(SmiteSlot).Name.ToLower());
             }
         }
         private static int SmiteRedDamage { get { return 54 + 6*Player.Level; } }
