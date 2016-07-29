@@ -118,7 +118,7 @@ namespace Rengar
             "monkeykingdoubleattack", "mordekaisermaceofspades", "nasusq", "nautiluspiercinggaze", "netherblade",
             "parley", "poppydevastatingblow", "powerfist", "renektonpreexecute", "rengarq", "shyvanadoubleattack",
             "sivirw", "takedown", "talonnoxiandiplomacy", "trundletrollsmash", "vaynetumble", "vie", "volibearq",
-            "xenzhaocombotarget", "yorickspectral", "reksaiq"
+            "xenzhaocombotarget", "yorickspectral", "reksaiq","itemtitanichydracleave"
         };
 
         //Spells that are not attacks even if they have the "attack" word in their name.
@@ -175,11 +175,9 @@ namespace Rengar
         {
             if (!sender.IsMe)
                 return;
-            LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 - (int)Player.AttackCastDelay*1000 + args.Duration;
+            LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 /*- (int)Player.AttackCastDelay * 1000 + args.Duration*/;
             DashTarget = _lastTarget;
-            dashcount = Utils.GameTimeTickCount;
-            dashwait = true;
-            dashtime = args.Duration;
+            DelayAction.Add(args.EndTick - Environment.TickCount - Game.Ping, () => FireAfterAttack(Player, DashTarget),1);
         }
         /// <summary>
         ///     This event is fired before the player auto attacks.
@@ -328,7 +326,7 @@ namespace Rengar
         {
             return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack
                 && !DisableBuff.Where(x => Player.HasBuffOfType(x)).Any() && !Player.IsDashing()
-                && (Utils.GameTimeTickCount >= LastAACommandTick + Player.AttackCastDelay * 1000 + 150 + Game.Ping);
+                && (Utils.GameTimeTickCount >= LastAACommandTick + Game.Ping + 150);
         }
 
         /// <summary>
@@ -349,9 +347,15 @@ namespace Rengar
             {
                 return true;
             }
+            var localExtraWindup = 0;
+            if (Player.ChampionName == "Rengar" && (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp")))
+            {
+                localExtraWindup = 200;
+            }
+
             return NoCancelChamps.Contains(Player.ChampionName) ||
-                ((Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup)
-                && (Utils.GameTimeTickCount >= LastAACommandTick + Player.AttackCastDelay * 1000 + 100 + extraWindup + Game.Ping));
+                ((Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup + localExtraWindup)
+                && (Utils.GameTimeTickCount >= LastAACommandTick + Game.Ping + 150));
         }
 
         //public static void SetMovementDelay(int delay)
@@ -373,53 +377,6 @@ namespace Rengar
         {
             return LastMoveCommandPosition;
         }
-
-        //public static void MoveTo(Vector3 position,
-        //    float holdAreaRadius = 0,
-        //    bool overrideTimer = false,
-        //    bool useFixedDistance = true,
-        //    bool randomizeMinDistance = true)
-        //{
-        //    if (Utils.GameTimeTickCount - LastMoveCommandT < _delay + _random.Next(0, 15) && !overrideTimer)
-        //    {
-        //        return;
-        //    }
-
-        //    LastMoveCommandT = Utils.GameTimeTickCount;
-
-        //    var playerPosition = Player.ServerPosition;
-
-        //    if (playerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
-        //    {
-        //        if (Player.Path.Length > 0)
-        //        {
-        //            Player.IssueOrder(GameObjectOrder.Stop, playerPosition);
-        //            LastMoveCommandPosition = playerPosition;
-        //        }
-        //        return;
-        //    }
-
-        //    var point = position;
-        //    if (useFixedDistance)
-        //    {
-        //        point = playerPosition.Extend(
-        //            position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
-        //    }
-        //    else
-        //    {
-        //        if (randomizeMinDistance)
-        //        {
-        //            point = playerPosition.Extend(position, (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance);
-        //        }
-        //        else if (playerPosition.Distance(position) > _minDistance)
-        //        {
-        //            point = playerPosition.Extend(position, _minDistance);
-        //        }
-        //    }
-
-        //    Player.IssueOrder(GameObjectOrder.MoveTo, point);
-        //    LastMoveCommandPosition = point;
-        //}
 
         public static void MoveTo(Vector3 position,
             float holdAreaRadius = 0,
@@ -503,7 +460,6 @@ namespace Rengar
                         if (!NoCancelChamps.Contains(Player.ChampionName))
                         {
                             LastAACommandTick = Utils.GameTimeTickCount - 4;
-                            //LastAATick = Utils.GameTimeTickCount + Game.Ping + 100 - (int)(ObjectManager.Player.AttackCastDelay * 1000f);
                             _missileLaunched = false;
                             StopMove = true;
                         }
@@ -978,21 +934,21 @@ namespace Rengar
             {
                 if (!Orbwalker.Enabled)
                     return;
-                if (dashwait == true)
-                {
-                    if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
-                    {
-                        FireAfterAttack(Player, DashTarget);
-                        StopMove = false;
-                        dashwait = false;
-                    }
-                    if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
-                    {
-                        FireAfterAttack(Player, DashTarget);
-                        StopMove = false;
-                        dashwait = false;
-                    }
-                }
+                //if (dashwait == true)
+                //{
+                //    if (!Player.IsDashing() && InAutoAttackRange(DashTarget))
+                //    {
+                //        FireAfterAttack(Player, DashTarget);
+                //        StopMove = false;
+                //        dashwait = false;
+                //    }
+                //    if (Utils.GameTimeTickCount - dashcount >= dashtime + 150)
+                //    {
+                //        FireAfterAttack(Player, DashTarget);
+                //        StopMove = false;
+                //        dashwait = false;
+                //    }
+                //}
                 try
                 {
                     if (ActiveMode == OrbwalkingMode.None)
