@@ -14,7 +14,8 @@ namespace Rengar
 {
     public static class SubOrb
     {
-        public static int Qtick , QcastTick, EcastTick, WcastTick;
+        public static int Qtick , QcastTick, EcastTick, WcastTick , FirstBlockTick;
+        public static bool FirstBlock;
         public static Obj_AI_Hero Player { get{ return ObjectManager.Player; } }
         public static void BadaoActivate()
         {
@@ -62,6 +63,10 @@ namespace Rengar
             //    if (Orbwalking.CanMove(90))
             //        Orbwalking.ResetAutoAttackTimer();
             //}
+            if (Environment.TickCount - FirstBlockTick > 3000 && FirstBlock == true)
+            {
+                FirstBlock = false;
+            }
         }
         private static int PlayerMana()
         {
@@ -78,8 +83,15 @@ namespace Rengar
         {
             if (!sender.Owner.IsMe)
                 return;
-            if (Player.Mana == 5)
-                return;
+            if (Player.Mana == 5 && FirstBlock == false && Variables.Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None
+                && (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E))
+            {
+                args.Process = false;
+                FirstBlockTick = Environment.TickCount;
+                FirstBlock = true;
+            }
+            return;
+
             if (args.Slot == SpellSlot.Q)
             {
                 QcastTick = Environment.TickCount;
