@@ -25,6 +25,26 @@ namespace Rengar
             Obj_AI_Base.OnBuffAdd += Obj_AI_Base_OnBuffAdd;
             Obj_AI_Base.OnBuffRemove += Obj_AI_Base_OnBuffRemove;
             Spellbook.OnCastSpell += Spellbook_OnCastSpell;
+            CustomEvents.Unit.OnDash += Unit_OnDash;
+            Drawing.OnDraw += Drawing_OnDraw;
+        }
+
+        private static void Drawing_OnDraw(EventArgs args)
+        {
+            //var pos = Prediction.GetPrediction(Player, 0.25f).UnitPosition;
+            //Render.Circle.DrawCircle(pos, 50, Color.Red);
+        }
+
+        private static void Unit_OnDash(Obj_AI_Base sender, Dash.DashItem args)
+        {
+            //if(Variables.E.IsReady())
+            //{
+            //    var targetE2 = MinionManager.GetMinions(Player.Position, Variables.E.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth).FirstOrDefault();
+            //    if (targetE2 != null)
+            //    {
+            //        Helper.CastE(targetE2);
+            //    }
+            //}
         }
 
         private static void Obj_AI_Base_OnBuffRemove(Obj_AI_Base sender, Obj_AI_BaseBuffRemoveEventArgs args)
@@ -35,6 +55,8 @@ namespace Rengar
             {
                 if (Environment.TickCount - Qtick <= 1500 && Orbwalking.CanAttack())
                     Orbwalking.LastAATick = Utils.GameTimeTickCount - Game.Ping / 2 - (int)(ObjectManager.Player.AttackCastDelay * 1000);
+                if (Environment.TickCount - Qtick <= 1500)
+                    Orbwalking.FireAfterAttack(Player, Orbwalking._lastTarget);
             }
         }
 
@@ -58,11 +80,6 @@ namespace Rengar
 
         private static void Game_OnUpdate(EventArgs args)
         {
-            //if (ObjectManager.Player.HasBuff("rengarqbase") || ObjectManager.Player.HasBuff("rengarqemp"))
-            //{
-            //    if (Orbwalking.CanMove(90))
-            //        Orbwalking.ResetAutoAttackTimer();
-            //}
             if (Environment.TickCount - FirstBlockTick > 3000 && FirstBlock == true)
             {
                 FirstBlock = false;
@@ -86,9 +103,50 @@ namespace Rengar
             if (Player.Mana == 5 && FirstBlock == false && Variables.Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None
                 && (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E))
             {
-                args.Process = false;
-                FirstBlockTick = Environment.TickCount;
-                FirstBlock = true;
+                if (Variables.Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Variables.AssassinateKey.GetValue<KeyBind>().Active)
+                {
+                    int index = Variables.ComboMode.GetValue<StringList>().SelectedIndex;
+                    if ((index == 0 || index == 4) && args.Slot == SpellSlot.Q)
+                    {
+                        args.Process = false;
+                        FirstBlockTick = Environment.TickCount;
+                        FirstBlock = true;
+                        return;
+                    }
+                    if (args.Slot == SpellSlot.E && (index == 3 || index == 4) )
+                    {
+                        args.Process = false;
+                        FirstBlockTick = Environment.TickCount;
+                        FirstBlock = true;
+                        return;
+                    }
+                    if (args.Slot == SpellSlot.W && index != 4 && !(Player.Health * 100 / Player.MaxHealth <= Variables.AutoWHeal.GetValue<Slider>().Value
+                        && (Player.Health * 100 / Player.MaxHealth <= 10 || Player.CountEnemiesInRange(1000) > 0)))
+                    {
+                        args.Process = false;
+                        FirstBlockTick = Environment.TickCount;
+                        FirstBlock = true;
+                        return;
+                    }
+                }
+                if (Variables.Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                {
+                    if (args.Slot == SpellSlot.E)
+                    {
+                        args.Process = false;
+                        FirstBlockTick = Environment.TickCount;
+                        FirstBlock = true;
+                        return;
+                    }
+                    if (args.Slot == SpellSlot.W && !(Player.Health * 100 / Player.MaxHealth <= Variables.AutoWHeal.GetValue<Slider>().Value
+                        && (Player.Health * 100 / Player.MaxHealth <= 10 || Player.CountEnemiesInRange(1000) > 0)))
+                    {
+                        args.Process = false;
+                        FirstBlockTick = Environment.TickCount;
+                        FirstBlock = true;
+                        return;
+                    }
+                }
             }
             return;
 

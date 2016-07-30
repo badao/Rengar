@@ -56,7 +56,7 @@ namespace Rengar
             {
                 if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                 {
-                    Variables.E.Cast(AssassinateTarget);
+                    Helper.CastE(AssassinateTarget);
                 }
             }
             if (mode == "Auto" || mode == "Snare")
@@ -65,7 +65,7 @@ namespace Rengar
                 {
                     if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                     {
-                        Variables.E.Cast(AssassinateTarget);
+                        Helper.CastE(AssassinateTarget);
                     }
                 }
             }
@@ -119,7 +119,7 @@ namespace Rengar
             {
                 if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                 {
-                    Variables.E.Cast(AssassinateTarget);
+                    Helper.CastE(AssassinateTarget);
                 }
             }
         }
@@ -167,7 +167,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -178,7 +178,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -196,7 +196,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -220,7 +220,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -238,7 +238,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -258,7 +258,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -276,7 +276,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }
@@ -308,7 +308,7 @@ namespace Rengar
                         {
                             if (Variables.E.IsReady() && AssassinateTarget.IsValidTarget(Variables.E.Range) && !AssassinateTarget.IsZombie)
                             {
-                                Variables.E.Cast(AssassinateTarget);
+                                Helper.CastE(AssassinateTarget);
                             }
                         }
                     }

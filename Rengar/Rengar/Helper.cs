@@ -31,6 +31,17 @@ namespace Rengar
             Variables.Q.Cast();
         }
 
+        public static void CastE (Obj_AI_Base target)
+        {
+            if (!Player.IsDashing())
+                Variables.E.Cast(target);
+            if (Player.IsDashing())
+            {
+                var pos = Prediction.GetPrediction(Player, 0.25f).UnitPosition;
+                Variables.E2.SetSkillshot(0.25f, 70, 1500, true, SkillshotType.SkillshotLine, pos, pos);
+                Variables.E2.Cast(target);
+            }
+        }
         public static bool HasItem()
         {
             if (ItemData.Tiamat_Melee_Only.GetItem().IsReady() || ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady()

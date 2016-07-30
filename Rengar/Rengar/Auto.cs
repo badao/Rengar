@@ -26,7 +26,7 @@ namespace Rengar
             {
                 if (sender.IsValidTarget(Variables.E.Range))
                 {
-                    Variables.E.Cast(sender);
+                    Helper.CastE(sender);
                 }
             }
         }
@@ -53,7 +53,7 @@ namespace Rengar
                 foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                 {
                     if (target.Health <= Variables.E.GetDamage(target))
-                        Variables.E.Cast(target);
+                        Helper.CastE(target);
                 }
             }
 

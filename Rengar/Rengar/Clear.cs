@@ -77,11 +77,11 @@ namespace Rengar
                 }
                 if (Variables.E.IsReady() && targetE1 != null && Variables.LaneE.GetValue<bool>())
                 {
-                    Variables.E.Cast(targetE1);
+                    Helper.CastE(targetE1);
                 }
                 if (Variables.E.IsReady() && targetE2 != null && Variables.JungE.GetValue<bool>())
                 {
-                    Variables.E.Cast(targetE2);
+                    Helper.CastE(targetE2);
                 }
             }
         }

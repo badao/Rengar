@@ -48,12 +48,12 @@ namespace Rengar
                 var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                 if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                 {
-                    Variables.E.Cast(targetE);
+                    Helper.CastE(targetE);
                 }
                 foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                 {
                     if (Variables.E.IsReady())
-                        Variables.E.Cast(target);
+                        Helper.CastE(target);
                 }
             }
             if (mode == "Auto" || mode == "Snare")
@@ -63,12 +63,12 @@ namespace Rengar
                     var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                     if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                     {
-                        Variables.E.Cast(targetE);
+                        Helper.CastE(targetE);
                     }
                     foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                     {
                         if (Variables.E.IsReady())
-                            Variables.E.Cast(target);
+                            Helper.CastE(target);
                     }
                 }
             }
@@ -106,12 +106,12 @@ namespace Rengar
                 var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                 if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                 {
-                    Variables.E.Cast(targetE);
+                    Helper.CastE(targetE);
                 }
                 foreach (var tar in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                 {
                     if (Variables.E.IsReady())
-                        Variables.E.Cast(tar);
+                        Helper.CastE(tar);
                 }
             }
         }
@@ -173,12 +173,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
 
@@ -191,12 +191,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
                     }
@@ -216,12 +216,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
 
@@ -248,12 +248,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
                     }
@@ -273,12 +273,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
 
@@ -301,12 +301,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
                     }
@@ -326,12 +326,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
 
@@ -367,12 +367,12 @@ namespace Rengar
                             var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                             if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                             {
-                                Variables.E.Cast(targetE);
+                                Helper.CastE(targetE);
                             }
                             foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
                             {
                                 if (Variables.E.IsReady())
-                                    Variables.E.Cast(target);
+                                    Helper.CastE(target);
                             }
                         }
 

@@ -24,8 +24,11 @@ namespace Rengar
             Variables.W = new Spell(SpellSlot.W, 300);
             Variables.E = new Spell(SpellSlot.E, 1000);
             Variables.R = new Spell(SpellSlot.R);
-            Variables.E.SetSkillshot(0.125f, 70, 1500, true, SkillshotType.SkillshotLine);
+            Variables.E.SetSkillshot(0.25f, 70, 1500, true, SkillshotType.SkillshotLine);
             Variables.E.MinHitChance = HitChance.Medium;
+            Variables.E2 = new Spell(SpellSlot.E, 1000);
+            Variables.E2.SetSkillshot(0.25f, 70, 1500, true, SkillshotType.SkillshotLine);
+            Variables.E2.MinHitChance = HitChance.Medium;
             Variables.W.SetSkillshot(0.25f, 500, 2000, false, SkillshotType.SkillshotCircle);
             Variables.W.MinHitChance = HitChance.Medium;
             foreach (var spell in

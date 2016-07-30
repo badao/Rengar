@@ -149,7 +149,7 @@ namespace Rengar
         public static int winduptime;
         public static int LastMoveCommandT;
         public static Vector3 LastMoveCommandPosition = Vector3.Zero;
-        private static AttackableUnit _lastTarget;
+        public static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
         //private static int _delay;
         private static float _minDistance = 400;
@@ -227,7 +227,7 @@ namespace Rengar
             }
         }
 
-        private static void FireAfterAttack(AttackableUnit unit, AttackableUnit target)
+        public static void FireAfterAttack(AttackableUnit unit, AttackableUnit target)
         {
             if (AfterAttack != null)
             {
