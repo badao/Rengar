@@ -43,40 +43,23 @@ namespace Rengar
                 }
             }
 
-            if (Player.Mana < 5)
+            if (Player.Mana < 4)
             {
                 var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                 if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                 {
                     Helper.CastE(targetE);
                 }
-                foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                {
-                    if (Variables.E.IsReady())
-                        Helper.CastE(target);
-                }
             }
-            if (mode == "Auto" || mode == "Snare")
+            if (mode == "E")
             {
-                if (Player.Mana == 5)
+                if (Player.Mana == 4)
                 {
                     var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
                     if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                     {
                         Helper.CastE(targetE);
                     }
-                    foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                    {
-                        if (Variables.E.IsReady())
-                            Helper.CastE(target);
-                    }
-                }
-            }
-            if (mode == "Always Q" || mode == "Burst")
-            {
-                if (Player.Mana == 5)
-                {
-                    Variables.Q.Cast();
                 }
             }
             
@@ -88,14 +71,14 @@ namespace Rengar
             if (Variables.Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
                 return;
 
-            if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 0 && Player.Mana == 5)
+            if (Variables.ComboMode.GetValue<StringList>().SelectedValue != "Q" && Player.Mana == 4)
             {
                 if (Helper.HasItem())
                     Helper.CastItem();
             }
             else if (Variables.Q.IsReady())
             {
-                Variables.Q.Cast();
+                Variables.Q.Cast(target as Obj_AI_Base);
             }
             else if (Helper.HasItem())
             {
@@ -107,11 +90,6 @@ namespace Rengar
                 if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
                 {
                     Helper.CastE(targetE);
-                }
-                foreach (var tar in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                {
-                    if (Variables.E.IsReady())
-                        Helper.CastE(tar);
                 }
             }
         }
@@ -126,11 +104,6 @@ namespace Rengar
                 if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
                     ItemData.Youmuus_Ghostblade.GetItem().Cast();
             }
-
-            if (!Variables.ComboResetAA.GetValue<bool>())
-                return;
-
-            Helper.QbeforeAttack(args.Target);
 
         }
 
@@ -151,244 +124,72 @@ namespace Rengar
                 }
             }
 
-            if (ItemData.Youmuus_Ghostblade.GetItem().IsReady() && Variables.ComboYoumuu.GetValue<bool>() 
-                && Player.HasBuff("RengarR"))
-            {
-                ItemData.Youmuus_Ghostblade.GetItem().Cast();
-            }
             if (!Player.HasBuff("RengarR"))
             {
-                if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 0) // snare
+                if (Player.Mana < 4)
                 {
-                    if (Player.Mana < 5)
+                    var targetQ = TargetSelector.GetTarget(Variables.Q.Range, TargetSelector.DamageType.Physical);
+                    if (Variables.Q.IsReady() && targetQ.IsValidTarget() && !targetQ.IsZombie)
                     {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
+                        if (!Player.IsDashing() && Orbwalking.CanMove(90)
+                           && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
+                        {
+                            Variables.Q.Cast(targetQ);
+                        }
+                    }
+                    var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Magical);
+                    if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
+                    {
+                        Variables.W.Cast(targetW);
+                    }
+                    if (Player.IsDashing() || Orbwalking.CanMove(90)
+                        && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
+                    {
+                        var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
+                        if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                        {
+                            Helper.CastE(targetE);
+                        }
+                    }
+
+                }
+                if (Player.Mana == 4)
+                {
+                    if (Variables.ComboMode.GetValue<StringList>().SelectedValue == "E")
+                    {
+                        if (Player.IsDashing() || Orbwalking.CanMove(90)
+                         && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
+                        {
+                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
+                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                            {
+                                Helper.CastE(targetE);
+                            }
+                        }
+                    }
+                    if (Variables.ComboMode.GetValue<StringList>().SelectedValue == "W")
+                    {
+                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Magical);
                         if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
                         {
                             Variables.W.Cast(targetW);
                         }
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-
                     }
-                    else
+                    if (Variables.ComboMode.GetValue<StringList>().SelectedValue == "Q")
                     {
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
+                        var targetQ = TargetSelector.GetTarget(Variables.Q.Range, TargetSelector.DamageType.Physical);
+                        if (Variables.Q.IsReady() && targetQ.IsValidTarget() && !targetQ.IsZombie)
                         {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
+                            if (!Player.IsDashing() && Orbwalking.CanMove(90)
+                               && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
                             {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
+                                Variables.Q.Cast(targetQ);
                             }
                         }
                     }
                 }
-                else if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 1) // burst
-                {
-                    if (Player.Mana < 5)
-                    {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
-                        if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
-                        {
-                            Variables.W.Cast(targetW);
-                        }
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        if (Variables.Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0
-                           && !Player.HasBuff("rengarpassivebuff"))
-                        {
-                            if (Orbwalking.CanMove(90) && !Orbwalking.CanAttack())
-                            {
-                                Variables.Q.Cast();
-                            }
-                        }
-                        if (Variables.Q.IsReady() && Player.IsDashing())
-                        {
-                            Variables.Q.Cast();
-                        }
-
-                        if (!Player.HasBuff("rengarpassivebuff") && !Player.IsDashing()
-                            && Orbwalking.CanMove(90)
-                            && !HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x)))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-                    }
-                }
-                else if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 2) // auto
-                {
-                    if (Player.Mana < 5)
-                    {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
-                        if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
-                        {
-                            Variables.W.Cast(targetW);
-                        }
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        if (Variables.Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0
-                            && !Player.HasBuff("rengarpassivebuff"))
-                        {
-                            if (Orbwalking.CanMove(90) && !Orbwalking.CanAttack())
-                            {
-                                Variables.Q.Cast();
-                            }
-
-                        }
-                        if (!Player.HasBuff("rengarpassivebuff") && !Player.IsDashing()
-                            && Orbwalking.CanMove(90)
-                            && !HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x)))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-                    }
-                }
-                else if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 3) // always Q
-                {
-                    if (Player.Mana < 5)
-                    {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
-                        if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
-                        {
-                            Variables.W.Cast(targetW);
-                        }
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        if (Variables.Q.IsReady() && Player.CountEnemiesInRange(Player.AttackRange + Player.BoundingRadius + 100) != 0
-                            && !Player.HasBuff("rengarpassivebuff"))
-                        {
-                            if (Orbwalking.CanMove(90) && !Orbwalking.CanAttack())
-                            {
-                                Variables.Q.Cast();
-                            }
-                        }
-                        if (Variables.Q.IsReady() && Player.IsDashing())
-                        {
-                            Variables.Q.Cast();
-                        }
-                    }
-                }
-                else if (Variables.ComboMode.GetValue<StringList>().SelectedIndex == 4) // ap mode
-                {
-                    if (Player.Mana < 5)
-                    {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
-                        if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
-                        {
-                            Variables.W.Cast(targetW);
-                        }
-                        if (Player.IsDashing() || Orbwalking.CanMove(90)
-                            && !(Orbwalking.CanAttack() && HeroManager.Enemies.Any(x => x.IsValidTarget() && Orbwalking.InAutoAttackRange(x))))
-                        {
-                            var targetE = TargetSelector.GetTarget(Variables.E.Range, TargetSelector.DamageType.Physical);
-                            if (Variables.E.IsReady() && targetE.IsValidTarget() && !targetE.IsZombie)
-                            {
-                                Helper.CastE(targetE);
-                            }
-                            foreach (var target in HeroManager.Enemies.Where(x => x.IsValidTarget(Variables.E.Range) && !x.IsZombie))
-                            {
-                                if (Variables.E.IsReady())
-                                    Helper.CastE(target);
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        var targetW = TargetSelector.GetTarget(500, TargetSelector.DamageType.Physical);
-                        if (Variables.W.IsReady() && targetW.IsValidTarget() && !targetW.IsZombie)
-                        {
-                            Variables.W.Cast(targetW);
-                        }
-                    }
-                }
-                else Game.Say("stupid");
             }
         
-    }
+        }
     }
 }
