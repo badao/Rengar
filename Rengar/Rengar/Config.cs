@@ -141,24 +141,16 @@ namespace Rengar
 
             switch (comboMode)
             {
-                case "Snare":
-                    Variables.ComboMode.SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 1));
+                case "Q":
+                    Variables.ComboMode.SetValue(new StringList(new[] { "Q", "W", "E" }, 1));
                     _lastSwitchTick = Utils.GameTimeTickCount + 300;
                     break;
-                case "Burst":
-                    Variables.ComboMode.SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 2));
+                case "W":
+                    Variables.ComboMode.SetValue(new StringList(new[] { "Q", "W", "E" }, 2));
                     _lastSwitchTick = Utils.GameTimeTickCount + 300;
                     break;
-                case "Auto":
-                    Variables.ComboMode.SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 3));
-                    _lastSwitchTick = Utils.GameTimeTickCount + 300;
-                    break;
-                case "Always Q":
-                    Variables.ComboMode.SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 4));
-                    _lastSwitchTick = Utils.GameTimeTickCount + 300;
-                    break;
-                case "AP mode":
-                    Variables.ComboMode.SetValue(new StringList(new[] { "Snare", "Burst", "Auto", "Always Q", "AP mode" }, 0));
+                case "E":
+                    Variables.ComboMode.SetValue(new StringList(new[] { "Q", "W", "E" }, 0));
                     _lastSwitchTick = Utils.GameTimeTickCount + 300;
                     break;
             }
