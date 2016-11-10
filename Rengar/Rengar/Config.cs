@@ -138,7 +138,6 @@ namespace Rengar
             {
                 return;
             }
-
             switch (comboMode)
             {
                 case "Q":
