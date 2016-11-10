@@ -41,7 +41,7 @@ namespace Rengar
             if (args.Slot == SpellSlot.Q)
             {
                 args.Process = false;
-                Player.Spellbook.CastSpell(SpellSlot.Q, Player.Position.Extend(args.EndPosition, Variables.Q.Range), false);
+                Player.Spellbook.CastSpell(SpellSlot.Q, Player.Position.Extend(args.StartPosition, Variables.Q.Range), false);
             }
         }
 
